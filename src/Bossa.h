@@ -20,8 +20,8 @@ public:
 
     // LinuxWindowClient
     virtual void handleExposeEvent();
-    virtual void handleKeyPressEvent(const XKeyPressedEvent&) {}
-    virtual void handleKeyReleaseEvent(const XKeyReleasedEvent&) {}
+    virtual void handleKeyPressEvent(const XKeyPressedEvent&);
+    virtual void handleKeyReleaseEvent(const XKeyReleasedEvent&);
     virtual void handleButtonPressEvent(const XButtonPressedEvent&);
     virtual void handleButtonReleaseEvent(const XButtonReleasedEvent&);
     virtual void handlePointerMoveEvent(const XPointerMovedEvent&);

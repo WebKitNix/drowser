@@ -6,6 +6,8 @@
 #include <WebKit2/WKPreferences.h>
 #include <WebKit2/WKPreferencesPrivate.h>
 #include <GL/gl.h>
+#include <X11/Xutil.h>
+#include <X11/keysym.h>
 
 #include "XlibEventUtils.h"
 
@@ -34,7 +36,7 @@ Bossa::Bossa()
     m_uiView->setFocused(true);
     m_uiView->setVisible(true);
     m_uiView->setActive(true);
-    m_uiView->setSize(m_window->size().first, 60);
+    m_uiView->setSize(m_window->size().first, 66);
     WKPageLoadURL(m_uiView->pageRef(), WKURLCreateWithUTF8CString("file:///home/hugo/src/bossa/src/ui.html"));
 
     glViewport(0, 0, m_window->size().first, m_window->size().second);
@@ -59,6 +61,69 @@ int Bossa::run()
 void Bossa::handleExposeEvent()
 {
     updateDisplay();
+}
+
+static inline bool isKeypadKeysym(const KeySym symbol)
+{
+    // Following keypad symbols are specified on Xlib Programming Manual (section: Keyboard Encoding).
+    return (symbol >= 0xFF80 && symbol <= 0xFFBD);
+}
+
+static KeySym chooseSymbolForXKeyEvent(const XKeyEvent& event, bool* useUpperCase)
+{
+    KeySym firstSymbol = XLookupKeysym(const_cast<XKeyEvent*>(&event), 0);
+    KeySym secondSymbol = XLookupKeysym(const_cast<XKeyEvent*>(&event), 1);
+    KeySym lowerCaseSymbol, upperCaseSymbol, chosenSymbol;
+    XConvertCase(firstSymbol, &lowerCaseSymbol, &upperCaseSymbol);
+    bool numLockModifier = event.state & Mod2Mask;
+    bool capsLockModifier = event.state & LockMask;
+    bool shiftModifier = event.state & ShiftMask;
+    if (numLockModifier && isKeypadKeysym(secondSymbol)) {
+        chosenSymbol = shiftModifier ? firstSymbol : secondSymbol;
+    } else if (lowerCaseSymbol == upperCaseSymbol) {
+        chosenSymbol = shiftModifier ? secondSymbol : firstSymbol;
+    } else if (shiftModifier == capsLockModifier)
+        chosenSymbol = firstSymbol;
+    else
+        chosenSymbol = secondSymbol;
+
+    *useUpperCase = (lowerCaseSymbol != upperCaseSymbol && chosenSymbol == upperCaseSymbol);
+    XConvertCase(chosenSymbol, &lowerCaseSymbol, &upperCaseSymbol);
+    return upperCaseSymbol;
+}
+
+static Nix::KeyEvent convertXKeyEventToNixKeyEvent(const XKeyEvent& event, const KeySym& symbol, bool useUpperCase)
+{
+    Nix::KeyEvent ev;
+    ev.type = (event.type == KeyPress) ? Nix::InputEvent::KeyDown : Nix::InputEvent::KeyUp;
+    ev.modifiers = convertXEventModifiersToNativeModifiers(event.state);
+    ev.timestamp = convertXEventTimeToNixTimestamp(event.time);
+    ev.shouldUseUpperCase = useUpperCase;
+    ev.isKeypad = isKeypadKeysym(symbol);
+    ev.key = convertXKeySymToNativeKeycode(symbol);
+    return ev;
+}
+
+void Bossa::handleKeyPressEvent(const XKeyPressedEvent& event)
+{
+    if (!m_uiView)
+        return;
+
+    bool shouldUseUpperCase;
+    KeySym symbol = chooseSymbolForXKeyEvent(event, &shouldUseUpperCase);
+    Nix::KeyEvent ev = convertXKeyEventToNixKeyEvent(event, symbol, shouldUseUpperCase);
+    m_uiView->sendEvent(ev);
+}
+
+void Bossa::handleKeyReleaseEvent(const XKeyReleasedEvent& event)
+{
+    if (!m_uiView)
+        return;
+
+    bool shouldUseUpperCase;
+    KeySym symbol = chooseSymbolForXKeyEvent(event, &shouldUseUpperCase);
+    Nix::KeyEvent ev = convertXKeyEventToNixKeyEvent(event, symbol, shouldUseUpperCase);
+    m_uiView->sendEvent(ev);
 }
 
 void Bossa::updateClickCount(const XButtonPressedEvent& event)

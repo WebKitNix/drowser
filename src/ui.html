@@ -30,6 +30,19 @@
     z-index: 1;
 }
 
+#urlBar {
+    background-image: url(./images/urlbar_fill.png);
+    background-repeat: repeat-x;
+    padding-right: 8px; /* due to tabBar > input border */
+}
+
+#urlBar > input {
+    background-color: transparent;
+    border-image: url(./images/urlbar_input.png) 8 4 8 4 fill;
+    border-width: 8px 4 px 8px 4px;
+    width: 100%;
+}
+
 </style>
 <script type="text/javascript">
 
@@ -37,11 +50,7 @@ tabs = new Array();
 activeTab = null;
 nextId = 0;
 
-function addTab(url)
-{
-}
-
-function addTabEmpty()
+function addEmptyTab()
 {
     var tabBar = document.getElementById("tabBar");
     var div = document.createElement("div");
@@ -70,10 +79,8 @@ function selectTab(obj)
     <div id="tabBar">
         <div class="tab" onclick="selectTab(this)">Bossa tab</div>
         <div class="tab" onclick="selectTab(this)">Bossa tab</div>
-        <span onclick="addTabEmpty()">add tab</span>
+        <span onclick="addEmptyTab()">add tab</span>
     </div>
-    
-    
-<!--     <input type="submit" onclick="addTab('www.google.com'); return False;" value="Open google :-)" style="margin-top: 100px; margin-left: auto;margin-right: auto; display: block;"/> -->
+    <div id="urlBar"><input type="text" /></div>
 </body>
 </html>

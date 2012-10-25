@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style type="text/css">
+* {
+    margin: 0px;
+    padding: 0px;
+}
+
+#tabBar {
+    height: 30px;
+    background-image: url(./images/tab_base_fill.png);
+    background-repeat: repeat-x;
+}
+
+.tab {
+    min-width: 160px;
+    border-width:10px 23px 4px 12px;
+    border-image: url(./images/tab_inactive.png) 10 23 4 12 fill;
+    line-height: 16px;
+    font-size: 16px;
+    float: left;
+    margin-right: -18px;
+    z-index: 0;
+}
+
+.active {
+    border-image-source :url(./images/tab_active.png);
+    position: relative;
+    z-index: 1;
+}
+
+</style>
+<script type="text/javascript">
+
+tabs = new Array();
+activeTab = null;
+nextId = 0;
+
+function addTab(url)
+{
+}
+
+function addTabEmpty()
+{
+    var tabBar = document.getElementById("tabBar");
+    var div = document.createElement("div");
+    div.id = "tab_" + (tabs++);
+    div.className = "tab";
+    div.appendChild(document.createTextNode("New Tab"));
+    div.onclick = function() { selectTab(div); }
+    tabBar.appendChild(div);
+}
+
+function selectTab(obj)
+{
+    if (activeTab == obj)
+        return;
+        
+    if (activeTab)
+        activeTab.className = "tab";
+        
+    obj.className = "tab active";
+    activeTab = obj;
+}
+
+</script>
+</head>
+<body>
+    <div id="tabBar">
+        <div class="tab" onclick="selectTab(this)">Bossa tab</div>
+        <div class="tab" onclick="selectTab(this)">Bossa tab</div>
+        <span onclick="addTabEmpty()">add tab</span>
+    </div>
+    
+    
+<!--     <input type="submit" onclick="addTab('www.google.com'); return False;" value="Open google :-)" style="margin-top: 100px; margin-left: auto;margin-right: auto; display: block;"/> -->
+</body>
+</html>

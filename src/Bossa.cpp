@@ -23,14 +23,15 @@ Bossa::Bossa()
     , m_clickCount(0)
 {
     m_mainLoop = g_main_loop_new(0, false);
-    m_uiContext = WKContextCreate();
+    // FIXME: Remove hardcoded paths
+    m_uiContext = WKContextCreateWithInjectedBundlePath(WKStringCreateWithUTF8CString("/home/hugo/src/bossa/build/src/UiBundle/libUiBundle.so"));
     m_uiPageGroup = WKPageGroupCreateWithIdentifier(WKStringCreateWithUTF8CString("Bossa"));
-    
+
     WKPreferencesRef preferences = WKPageGroupGetPreferences(m_uiPageGroup);
     WKPreferencesSetAcceleratedCompositingEnabled(preferences, true);
     WKPreferencesSetFrameFlatteningEnabled(preferences, true);
     WKPreferencesSetDeveloperExtrasEnabled(preferences, true);
-    
+
     m_uiView = Nix::WebView::create(m_uiContext, m_uiPageGroup, this);
     m_uiView->initialize();
     m_uiView->setFocused(true);

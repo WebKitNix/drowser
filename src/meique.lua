@@ -20,3 +20,4 @@ bossa:addFiles([[
   XlibEventSource.cpp
 ]])
 
+addSubdirectory("UiBundle")

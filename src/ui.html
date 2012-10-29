@@ -59,16 +59,17 @@ function addEmptyTab()
     div.appendChild(document.createTextNode("New Tab"));
     div.onclick = function() { selectTab(div); }
     tabBar.appendChild(div);
+    window.addTab(div.id);
 }
 
 function selectTab(obj)
 {
     if (activeTab == obj)
         return;
-        
+
     if (activeTab)
         activeTab.className = "tab";
-        
+
     obj.className = "tab active";
     activeTab = obj;
 }

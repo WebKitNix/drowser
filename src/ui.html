@@ -65,6 +65,8 @@ function addEmptyTab()
     div.onclick = function() { selectTab(div); }
     tabBar.appendChild(div);
     window._addTab(tabId);
+    div._url = "http://";
+    selectTab(div);
 }
 
 function selectTab(obj)
@@ -78,14 +80,19 @@ function selectTab(obj)
     obj.className = "tab active";
     activeTab = obj;
     window._setCurrentTab(parseInt(activeTab.id));
-    document.getElementById("urlField").value = activeTab._url;
+    var urlField = document.getElementById("urlField");
+    urlField.value = activeTab._url;
+    if (urlField.value == "http://")
+        urlField.focus();
 }
 
 function loadUrl()
 {
-    var url = document.getElementById("urlField").value;
+    var urlField = document.getElementById("urlField");
+    var url = urlField.value;
     window._loadUrl(url);
     activeTab._url = url;
+    urlField.blur();
 }
 
 </script>

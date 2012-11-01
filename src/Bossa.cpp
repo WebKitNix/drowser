@@ -1,13 +1,19 @@
 #include "Bossa.h"
 
-#include <WebKit2/WKType.h>
+#include <WebKit2/WKContext.h>
+#include <WebKit2/WKNumber.h>
 #include <WebKit2/WKString.h>
+#include <WebKit2/WKType.h>
 #include <WebKit2/WKURL.h>
 #include <WebKit2/WKPreferences.h>
 #include <WebKit2/WKPreferencesPrivate.h>
 #include <GL/gl.h>
 #include <X11/Xutil.h>
 #include <X11/keysym.h>
+#include <cairo.h>
+#include <cassert>
+#include <cstdio>
+#include <cstring>
 
 #include "XlibEventUtils.h"
 
@@ -23,14 +29,45 @@ Bossa::Bossa()
     , m_clickCount(0)
 {
     m_mainLoop = g_main_loop_new(0, false);
+
+    initUi();
+    cairo_matrix_init_translate(&m_webTransform, 0, 66);
+}
+
+Bossa::~Bossa()
+{
+     g_main_loop_unref(m_mainLoop);
+     delete m_uiView;
+     delete m_window;
+}
+
+extern "C" {
+static void didReceiveMessageFromInjectedBundle(WKContextRef page, WKStringRef messageName, WKTypeRef messageBody, const void *clientInfo)
+{
+    Bossa* self = reinterpret_cast<Bossa*>(const_cast<void*>(clientInfo));
+    if (WKStringIsEqualToUTF8CString(messageName, "addTab"))
+        self->addTab( WKUInt64GetValue((WKUInt64Ref)messageBody) );
+    else if (WKStringIsEqualToUTF8CString(messageName, "setCurrentTab"))
+        self->setCurrentTab( WKUInt64GetValue((WKUInt64Ref)messageBody) );
+    else if (WKStringIsEqualToUTF8CString(messageName, "loadUrl")) {
+        WKStringRef wkUrl = reinterpret_cast<WKStringRef>(messageBody);
+        size_t wkUrlSize = WKStringGetMaximumUTF8CStringSize(wkUrl);
+        char* buffer = new char[wkUrlSize + 1];
+        WKStringGetUTF8CString(wkUrl, buffer, wkUrlSize);
+        self->loadUrl(buffer);
+        delete[] buffer;
+    }
+}
+}
+
+void Bossa::initUi()
+{
     // FIXME: Remove hardcoded paths
     m_uiContext = WKContextCreateWithInjectedBundlePath(WKStringCreateWithUTF8CString("/home/hugo/src/bossa/build/src/UiBundle/libUiBundle.so"));
     m_uiPageGroup = WKPageGroupCreateWithIdentifier(WKStringCreateWithUTF8CString("Bossa"));
 
     WKPreferencesRef preferences = WKPageGroupGetPreferences(m_uiPageGroup);
     WKPreferencesSetAcceleratedCompositingEnabled(preferences, true);
-    WKPreferencesSetFrameFlatteningEnabled(preferences, true);
-    WKPreferencesSetDeveloperExtrasEnabled(preferences, true);
 
     m_uiView = Nix::WebView::create(m_uiContext, m_uiPageGroup, this);
     m_uiView->initialize();
@@ -40,17 +77,20 @@ Bossa::Bossa()
     m_uiView->setSize(m_window->size().first, 66);
     WKPageLoadURL(m_uiView->pageRef(), WKURLCreateWithUTF8CString("file:///home/hugo/src/bossa/src/ui.html"));
 
+    WKContextInjectedBundleClient bundleClient;
+    std::memset(&bundleClient, 0, sizeof(bundleClient));
+    bundleClient.clientInfo = this;
+    bundleClient.didReceiveMessageFromInjectedBundle = ::didReceiveMessageFromInjectedBundle;
+    WKContextSetInjectedBundleClient(m_uiContext, &bundleClient);
+
     glViewport(0, 0, m_window->size().first, m_window->size().second);
     m_window->makeCurrent();
-}
 
-Bossa::~Bossa()
-{
-     g_main_loop_unref(m_mainLoop);
-     delete m_uiView;
-     WKRelease(m_uiContext);
-     WKRelease(m_uiPageGroup);
-     delete m_window;
+    // context used on all webpages.
+    m_webContext = WKContextCreate();
+    m_webPageGroup = WKPageGroupCreateWithIdentifier(WKStringCreateWithUTF8CString("Web"));
+    WKPreferencesRef webPreferences = WKPageGroupGetPreferences(m_webPageGroup);
+    WKPreferencesSetAcceleratedCompositingEnabled(webPreferences, true);
 }
 
 int Bossa::run()
@@ -183,7 +223,7 @@ void Bossa::handleButtonPressEvent(const XButtonPressedEvent& event)
     ev.clickCount = m_clickCount;
     ev.modifiers = convertXEventModifiersToNativeModifiers(event.state);
     ev.timestamp = convertXEventTimeToNixTimestamp(event.time);
-    
+
     m_uiView->sendEvent(ev);
 }
 
@@ -241,6 +281,15 @@ void Bossa::viewNeedsDisplay(int, int, int, int)
     updateDisplay();
 }
 
+void Bossa::webProcessCrashed(WKStringRef url)
+{
+    puts("UI Webprocess crashed :-(");
+}
+
+void scheduleDisplay()
+{
+}
+
 void Bossa::updateDisplay()
 {
     std::pair<int, int> size = m_window->size();
@@ -249,6 +298,41 @@ void Bossa::updateDisplay()
 
     m_uiView->paintToCurrentGLContext();
 
+    if (m_tabs.size())
+        currentTab()->paintToCurrentGLContext();
+
     m_window->swapBuffers();
 }
 
+Nix::WebView* Bossa::currentTab()
+{
+    return m_tabs[m_currentTab];
+}
+
+void Bossa::addTab(int tabId)
+{
+    assert(m_tabs.count(tabId) == 0);
+    Nix::WebView* view = Nix::WebView::create(m_webContext, m_webPageGroup, this);
+    view->initialize();
+    view->setFocused(true);
+    view->setVisible(true);
+    view->setActive(true);
+    view->setUserViewportTransformation(m_webTransform);
+    view->setSize(m_window->size().first, m_window->size().second - 66);
+
+    m_tabs[tabId] = view;
+    m_currentTab = tabId;
+}
+
+void Bossa::setCurrentTab(int tabId)
+{
+    if (!m_tabs.count(tabId))
+        return;
+    m_currentTab = tabId;
+}
+
+void Bossa::loadUrl(const char* url)
+{
+    printf("Load URL: %s\n", url);
+    WKPageLoadURL(currentTab()->pageRef(), WKURLCreateWithUTF8CString(url));
+}

@@ -2,46 +2,70 @@
 #include <WebKit2/WKBundleFrame.h>
 #include <WebKit2/WKBundlePage.h>
 #include <WebKit2/WKBundleInitialize.h>
+#include <WebKit2/WKNumber.h>
+#include <WebKit2/WKString.h>
+#include <WebKit2/WKStringPrivate.h>
+#include <WebKit2/WKType.h>
 #include <cstdio>
 #include <cassert>
 
-#if defined _WIN32
-    #if UIBUNDLE_EXPORT
-        #define LIBSHIBOKEN_API __declspec(dllexport)
-    #else
-        #ifdef _MSC_VER
-            #define UIBUNDLE_EXPORT __declspec(dllimport)
-        #endif
-    #endif
-#elif __GNUC__ >= 4
-    #define UIBUNDLE_EXPORT __attribute__ ((visibility("default")))
-#else
-    #define UIBUNDLE_EXPORT
-#endif
+// I don't care about windows or gcc < 4.x right now.
+#define UIBUNDLE_EXPORT __attribute__ ((visibility("default")))
 
-JSValueRef addTab(JSContextRef context, JSObjectRef function, JSObjectRef thisObject, size_t argumentCount, const JSValueRef arguments[], JSValueRef* exception)
+static WKBundleRef gBundle;
+
+extern "C" {
+
+static JSValueRef addTab(JSContextRef context, JSObjectRef function, JSObjectRef thisObject, size_t argumentCount, const JSValueRef arguments[], JSValueRef* exception)
 {
     assert(argumentCount == 1);
-    assert(JSValueIsString(arguments[0]));
+    assert(JSValueIsNumber(context, arguments[0]));
 
-    JSStringRef jsStr = JSValueToStringCopy(context, arguments[0], 0);
-    char str[512];
-    JSStringGetUTF8CString(jsStr, str, sizeof(str)-1);
-    JSStringRelease(jsStr);
+    double tabId = JSValueToNumber(context, arguments[0], 0);
+    WKBundlePostMessage(gBundle, WKStringCreateWithUTF8CString("addTab"), WKUInt64Create(tabId));
 
-
-//     WKBundlePostMessage();
-
-    return thisObject;
+    return JSValueMakeNull(context);
 }
+
+static JSValueRef loadUrl(JSContextRef context, JSObjectRef function, JSObjectRef thisObject, size_t argumentCount, const JSValueRef arguments[], JSValueRef* exception)
+{
+    assert(argumentCount == 1);
+    assert(JSValueIsString(context, arguments[0]));
+
+    WKStringRef url = WKStringCreateWithJSString(JSValueToStringCopy(context, arguments[0], 0));
+    WKBundlePostMessage(gBundle, WKStringCreateWithUTF8CString("loadUrl"), url);
+
+    return JSValueMakeNull(context);
+}
+
+static JSValueRef setCurrentTab(JSContextRef context, JSObjectRef function, JSObjectRef thisObject, size_t argumentCount, const JSValueRef arguments[], JSValueRef* exception)
+{
+    assert(argumentCount == 1);
+    assert(JSValueIsNumber(context, arguments[0]));
+
+    double tabId = JSValueToNumber(context, arguments[0], 0);
+    WKBundlePostMessage(gBundle, WKStringCreateWithUTF8CString("setCurrentTab"), WKUInt64Create(tabId));
+
+    return JSValueMakeNull(context);
+}
+
+static void registerJSFunction(JSGlobalContextRef context, const char* name, JSObjectCallAsFunctionCallback callback)
+{
+    JSObjectRef window = JSContextGetGlobalObject(context);
+    JSStringRef funcName = JSStringCreateWithUTF8CString(name);
+    JSObjectRef jsFunc = JSObjectMakeFunctionWithCallback(context, funcName, callback);
+    JSObjectSetProperty(context, window, funcName, jsFunc, kJSPropertyAttributeReadOnly | kJSPropertyAttributeDontDelete, 0);
+}
+
+#define REGISTER_JS_FUNCTION(context, function) registerJSFunction(context, "_" #function, function)
 
 void didClearWindowForFrame(WKBundlePageRef page, WKBundleFrameRef frame, WKBundleScriptWorldRef world, const void *clientInfo)
 {
     JSGlobalContextRef context = WKBundleFrameGetJavaScriptContextForWorld(frame, world);
-    JSObjectRef window = JSContextGetGlobalObject(context);
 
-    JSObjectRef addTabFunc = JSObjectMakeFunctionWithCallback(context, JSStringCreateWithUTF8CString("addTab"), addTab);
-    JSObjectSetProperty(context, window, JSStringCreateWithUTF8CString("addTab"), addTabFunc, kJSPropertyAttributeReadOnly | kJSPropertyAttributeDontDelete, 0);
+    REGISTER_JS_FUNCTION(context, addTab);
+    REGISTER_JS_FUNCTION(context, loadUrl);
+    REGISTER_JS_FUNCTION(context, setCurrentTab);
 }
 
 void didCreatePage(WKBundleRef bundle, WKBundlePageRef page, const void* clientInfo)
@@ -84,18 +108,14 @@ void didCreatePage(WKBundleRef bundle, WKBundlePageRef page, const void* clientI
     WKBundlePageSetPageLoaderClient(page, &loaderClient);
 }
 
-void willDestroyPage(WKBundleRef bundle, WKBundlePageRef page, const void* clientInfo)
-{
-}
-
-extern "C" {
 UIBUNDLE_EXPORT void WKBundleInitialize(WKBundleRef bundle, WKTypeRef initializationUserData)
 {
+    gBundle = bundle;
     WKBundleClient client = {
         kWKBundleClientCurrentVersion,
         0,
         didCreatePage,
-        willDestroyPage,
+        0,
         0, // didInitializePageGroup,
         0, // didReceiveMessage,
         0, // didReceiveMessageToPage

@@ -5,6 +5,7 @@
 #include <glib.h>
 #include <WebView.h>
 #include <WebKit2/WKContext.h>
+#include <map>
 
 namespace Nix {
 class WebView;
@@ -19,6 +20,7 @@ public:
     int run();
 
     // LinuxWindowClient
+    // TODO: Move X stuff away from here and remove LinuxWindowClient inheritance
     virtual void handleExposeEvent();
     virtual void handleKeyPressEvent(const XKeyPressedEvent&);
     virtual void handleKeyReleaseEvent(const XKeyReleasedEvent&);
@@ -30,7 +32,13 @@ public:
 
     // WebViewClient
     virtual void viewNeedsDisplay(int, int, int, int);
-    
+    virtual void webProcessCrashed(WKStringRef url);
+
+    void addTab(int tabId);
+    void setCurrentTab(int tabId);
+    void loadUrl(const char*);
+    Nix::WebView* currentTab();
+
 private:
     GMainLoop* m_mainLoop;
     LinuxWindow* m_window;
@@ -38,14 +46,23 @@ private:
     Nix::WebView* m_uiView;
     WKContextRef m_uiContext;
     WKPageGroupRef m_uiPageGroup;
-    
+
     double m_lastClickTime;
     int m_lastClickX;
     int m_lastClickY;
     Nix::MouseEvent::Button m_lastClickButton;
     unsigned m_clickCount;
-    
+
+
+    std::map<int, Nix::WebView*> m_tabs;
+    int m_currentTab;
+    cairo_matrix_t m_webTransform;
+    WKPageGroupRef m_webPageGroup;
+    WKContextRef m_webContext;
+
+    void scheduleDisplay();
     void updateDisplay();
+    void initUi();
     void updateClickCount(const XButtonPressedEvent& event);
     void handleWheelEvent(const XButtonPressedEvent& event);
 };

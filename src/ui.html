@@ -33,20 +33,24 @@
 #urlBar {
     background-image: url(./images/urlbar_fill.png);
     background-repeat: repeat-x;
-    padding-right: 8px; /* due to tabBar > input border */
+    padding-right: 4px; /* due to tabBar > input border */
 }
 
-#urlBar > input {
+form {
+    width: 100%;
+}
+
+input {
     background-color: transparent;
     border-image: url(./images/urlbar_input.png) 8 4 8 4 fill;
     border-width: 8px 4 px 8px 4px;
     width: 100%;
+    margin-right: -50px;
 }
 
 </style>
 <script type="text/javascript">
 
-tabs = new Array();
 activeTab = null;
 nextId = 0;
 
@@ -54,12 +58,13 @@ function addEmptyTab()
 {
     var tabBar = document.getElementById("tabBar");
     var div = document.createElement("div");
-    div.id = "tab_" + (tabs++);
+    var tabId = nextId++;
+    div.id = String(tabId);
     div.className = "tab";
     div.appendChild(document.createTextNode("New Tab"));
     div.onclick = function() { selectTab(div); }
     tabBar.appendChild(div);
-    window.addTab(div.id);
+    window._addTab(tabId);
 }
 
 function selectTab(obj)
@@ -72,16 +77,20 @@ function selectTab(obj)
 
     obj.className = "tab active";
     activeTab = obj;
+    window._setCurrentTab(parseInt(activeTab.id));
+}
+
+function loadUrl()
+{
+    window._loadUrl(document.getElementById("urlField").value);
 }
 
 </script>
 </head>
-<body>
+<body onload="addEmptyTab();">
     <div id="tabBar">
-        <div class="tab" onclick="selectTab(this)">Bossa tab</div>
-        <div class="tab" onclick="selectTab(this)">Bossa tab</div>
         <span onclick="addEmptyTab()">add tab</span>
     </div>
-    <div id="urlBar"><input type="text" /></div>
+    <div id="urlBar"><form onsubmit="loadUrl(); return false;"><input id="urlField" type="text" /></form></div>
 </body>
 </html>

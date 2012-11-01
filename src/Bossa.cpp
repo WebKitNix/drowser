@@ -14,6 +14,11 @@
 #include <cassert>
 #include <cstdio>
 #include <cstring>
+#include <unistd.h>
+#include <cstdlib>
+#include <libgen.h>
+#include <limits.h>
+#include <string>
 
 #include "XlibEventUtils.h"
 
@@ -60,10 +65,27 @@ static void didReceiveMessageFromInjectedBundle(WKContextRef page, WKStringRef m
 }
 }
 
+static std::string getApplicationPath()
+{
+    char path[PATH_MAX];
+    ssize_t len = readlink("/proc/self/exe", path, PATH_MAX);
+    if (len != -1) {
+        path[len] = 0;
+        char* dirPath = strdup(path);
+        dirPath = dirname(dirPath);
+        strncpy(path, dirPath, PATH_MAX);
+        free(dirPath);
+        return path;
+    } else {
+        fprintf(stderr, "Can't read /proc/self/exe!\n");
+        exit(1);
+    }
+}
+
 void Bossa::initUi()
 {
-    // FIXME: Remove hardcoded paths
-    m_uiContext = WKContextCreateWithInjectedBundlePath(WKStringCreateWithUTF8CString("/home/hugo/src/bossa/build/src/UiBundle/libUiBundle.so"));
+    const std::string appPath = getApplicationPath();
+    m_uiContext = WKContextCreateWithInjectedBundlePath(WKStringCreateWithUTF8CString((appPath + "/UiBundle/libUiBundle.so").c_str()));
     m_uiPageGroup = WKPageGroupCreateWithIdentifier(WKStringCreateWithUTF8CString("Bossa"));
 
     WKPreferencesRef preferences = WKPageGroupGetPreferences(m_uiPageGroup);
@@ -75,7 +97,7 @@ void Bossa::initUi()
     m_uiView->setVisible(true);
     m_uiView->setActive(true);
     m_uiView->setSize(m_window->size().first, 66);
-    WKPageLoadURL(m_uiView->pageRef(), WKURLCreateWithUTF8CString("file:///home/hugo/src/bossa/src/ui.html"));
+    WKPageLoadURL(m_uiView->pageRef(), WKURLCreateWithUTF8CString(("file://" + appPath + "/ui.html").c_str()));
 
     WKContextInjectedBundleClient bundleClient;
     std::memset(&bundleClient, 0, sizeof(bundleClient));

@@ -20,4 +20,11 @@ bossa:addFiles([[
   XlibEventSource.cpp
 ]])
 
+-- meique TODO: missing os.copy and os.link functions
+configureFile("ui.html", "ui.html")
+bossaUi = CustomTarget:new("ui", function()
+    os.execute("ln -sd "..bossaUi:sourceDir().."images "..bossaUi:buildDir().." 2> /dev/null")
+end)
+bossa:addDependency(bossaUi)
+
 addSubdirectory("UiBundle")

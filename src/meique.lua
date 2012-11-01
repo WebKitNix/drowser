@@ -20,7 +20,7 @@ bossa:addFiles([[
   XlibEventSource.cpp
 ]])
 
--- meique TODO: missing os.copy and os.link functions
+-- meique TODO: missing copyFile and copyDirectory functions on meique API
 configureFile("ui.html", "ui.html")
 bossaUi = CustomTarget:new("ui", function()
     os.execute("ln -sd "..bossaUi:sourceDir().."images "..bossaUi:buildDir().." 2> /dev/null")

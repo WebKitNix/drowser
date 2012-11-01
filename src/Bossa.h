@@ -11,6 +11,10 @@ namespace Nix {
 class WebView;
 }
 
+extern "C" {
+gboolean callUpdateDisplay(gpointer);
+}
+
 class Bossa : public LinuxWindowClient, public Nix::WebViewClient
 {
 public:
@@ -41,6 +45,7 @@ public:
 
 private:
     GMainLoop* m_mainLoop;
+    bool m_displayUpdateScheduled;
     LinuxWindow* m_window;
 
     Nix::WebView* m_uiView;
@@ -60,11 +65,13 @@ private:
     WKPageGroupRef m_webPageGroup;
     WKContextRef m_webContext;
 
-    void scheduleDisplay();
+    void scheduleUpdateDisplay();
     void updateDisplay();
     void initUi();
     void updateClickCount(const XButtonPressedEvent& event);
     void handleWheelEvent(const XButtonPressedEvent& event);
+
+    friend gboolean callUpdateDisplay(gpointer);
 };
 
 #endif

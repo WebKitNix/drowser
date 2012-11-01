@@ -11,6 +11,7 @@
 #include <X11/Xutil.h>
 #include <X11/keysym.h>
 #include <cairo.h>
+#include <glib.h>
 #include <cassert>
 #include <cstdio>
 #include <cstring>
@@ -22,12 +23,12 @@
 
 #include "XlibEventUtils.h"
 
-
 static const double DOUBLE_CLICK_INTERVAL = 300;
 static const int UI_HEIGHT = 53;
 
 Bossa::Bossa()
-    : m_window(new LinuxWindow(this, 1024, 600))
+    : m_displayUpdateScheduled(false)
+    , m_window(new LinuxWindow(this, 1024, 600))
     , m_lastClickTime(0)
     , m_lastClickX(0)
     , m_lastClickY(0)
@@ -123,7 +124,7 @@ int Bossa::run()
 
 void Bossa::handleExposeEvent()
 {
-    updateDisplay();
+    scheduleUpdateDisplay();
 }
 
 static inline bool isKeypadKeysym(const KeySym symbol)
@@ -293,7 +294,7 @@ void Bossa::handleSizeChanged(int width, int height)
     m_uiView->setSize(width, height);
     if (m_tabs.size())
         currentTab()->setSize(width, height - UI_HEIGHT);
-    updateDisplay();
+    scheduleUpdateDisplay();
 }
 
 void Bossa::handleClosed()
@@ -303,12 +304,31 @@ void Bossa::handleClosed()
 
 void Bossa::viewNeedsDisplay(int, int, int, int)
 {
-    updateDisplay();
+    scheduleUpdateDisplay();
 }
 
 void Bossa::webProcessCrashed(WKStringRef url)
 {
     puts("UI Webprocess crashed :-(");
+}
+
+gboolean callUpdateDisplay(gpointer data)
+{
+    Bossa* browser = reinterpret_cast<Bossa*>(data);
+
+    assert(browser->m_displayUpdateScheduled);
+    browser->m_displayUpdateScheduled = false;
+    browser->updateDisplay();
+    return 0;
+}
+
+void Bossa::scheduleUpdateDisplay()
+{
+    if (m_displayUpdateScheduled)
+        return;
+
+    m_displayUpdateScheduled = true;
+    g_timeout_add(0, callUpdateDisplay, this);
 }
 
 void Bossa::updateDisplay()

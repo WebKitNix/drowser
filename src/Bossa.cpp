@@ -24,6 +24,7 @@
 
 
 static const double DOUBLE_CLICK_INTERVAL = 300;
+static const int UI_HEIGHT = 53;
 
 Bossa::Bossa()
     : m_window(new LinuxWindow(this, 1024, 600))
@@ -36,7 +37,7 @@ Bossa::Bossa()
     m_mainLoop = g_main_loop_new(0, false);
 
     initUi();
-    cairo_matrix_init_translate(&m_webTransform, 0, 66);
+    cairo_matrix_init_translate(&m_webTransform, 0, UI_HEIGHT);
 }
 
 Bossa::~Bossa()
@@ -96,7 +97,7 @@ void Bossa::initUi()
     m_uiView->setFocused(true);
     m_uiView->setVisible(true);
     m_uiView->setActive(true);
-    m_uiView->setSize(m_window->size().first, 66);
+    m_uiView->setSize(m_window->size().first, m_window->size().second);
     WKPageLoadURL(m_uiView->pageRef(), WKURLCreateWithUTF8CString(("file://" + appPath + "/ui.html").c_str()));
 
     WKContextInjectedBundleClient bundleClient;
@@ -105,7 +106,6 @@ void Bossa::initUi()
     bundleClient.didReceiveMessageFromInjectedBundle = ::didReceiveMessageFromInjectedBundle;
     WKContextSetInjectedBundleClient(m_uiContext, &bundleClient);
 
-    glViewport(0, 0, m_window->size().first, m_window->size().second);
     m_window->makeCurrent();
 
     // context used on all webpages.
@@ -291,6 +291,9 @@ void Bossa::handleSizeChanged(int width, int height)
         return;
 
     m_uiView->setSize(width, height);
+    if (m_tabs.size())
+        currentTab()->setSize(width, height - UI_HEIGHT);
+    updateDisplay();
 }
 
 void Bossa::handleClosed()
@@ -308,13 +311,10 @@ void Bossa::webProcessCrashed(WKStringRef url)
     puts("UI Webprocess crashed :-(");
 }
 
-void scheduleDisplay()
-{
-}
-
 void Bossa::updateDisplay()
 {
     std::pair<int, int> size = m_window->size();
+    glViewport(0, 0, m_window->size().first, m_window->size().second);
     glClearColor(1.0, 1.0, 1.0, 1.0);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -351,6 +351,7 @@ void Bossa::setCurrentTab(int tabId)
     if (!m_tabs.count(tabId))
         return;
     m_currentTab = tabId;
+    currentTab()->setSize(m_window->size().first, m_window->size().second - UI_HEIGHT);
 }
 
 void Bossa::loadUrl(const char* url)

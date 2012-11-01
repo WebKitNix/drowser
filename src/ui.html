@@ -78,11 +78,14 @@ function selectTab(obj)
     obj.className = "tab active";
     activeTab = obj;
     window._setCurrentTab(parseInt(activeTab.id));
+    document.getElementById("urlField").value = activeTab._url;
 }
 
 function loadUrl()
 {
-    window._loadUrl(document.getElementById("urlField").value);
+    var url = document.getElementById("urlField").value;
+    window._loadUrl(url);
+    activeTab._url = url;
 }
 
 </script>

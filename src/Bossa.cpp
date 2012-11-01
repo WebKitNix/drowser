@@ -5,6 +5,7 @@
 #include <WebKit2/WKString.h>
 #include <WebKit2/WKType.h>
 #include <WebKit2/WKURL.h>
+#include <WebKit2/WKPage.h>
 #include <WebKit2/WKPreferences.h>
 #include <WebKit2/WKPreferencesPrivate.h>
 #include <GL/gl.h>
@@ -52,17 +53,21 @@ extern "C" {
 static void didReceiveMessageFromInjectedBundle(WKContextRef page, WKStringRef messageName, WKTypeRef messageBody, const void *clientInfo)
 {
     Bossa* self = reinterpret_cast<Bossa*>(const_cast<void*>(clientInfo));
-    if (WKStringIsEqualToUTF8CString(messageName, "addTab"))
+    if (WKStringIsEqualToUTF8CString(messageName, "addTab")) {
         self->addTab( WKUInt64GetValue((WKUInt64Ref)messageBody) );
-    else if (WKStringIsEqualToUTF8CString(messageName, "setCurrentTab"))
+    } else if (WKStringIsEqualToUTF8CString(messageName, "setCurrentTab")) {
         self->setCurrentTab( WKUInt64GetValue((WKUInt64Ref)messageBody) );
-    else if (WKStringIsEqualToUTF8CString(messageName, "loadUrl")) {
+    } else if (WKStringIsEqualToUTF8CString(messageName, "loadUrl")) {
         WKStringRef wkUrl = reinterpret_cast<WKStringRef>(messageBody);
         size_t wkUrlSize = WKStringGetMaximumUTF8CStringSize(wkUrl);
         char* buffer = new char[wkUrlSize + 1];
         WKStringGetUTF8CString(wkUrl, buffer, wkUrlSize);
         self->loadUrl(buffer);
         delete[] buffer;
+    } else if (WKStringIsEqualToUTF8CString(messageName, "back")) {
+        self->back();
+    } else if (WKStringIsEqualToUTF8CString(messageName, "forward")) {
+        self->forward();
     }
 }
 }
@@ -378,4 +383,18 @@ void Bossa::loadUrl(const char* url)
 {
     printf("Load URL: %s\n", url);
     WKPageLoadURL(currentTab()->pageRef(), WKURLCreateWithUTF8CString(url));
+}
+
+void Bossa::back()
+{
+    WKPageRef page = currentTab()->pageRef();
+    if (WKPageCanGoBack(page))
+        WKPageGoBack(page);
+}
+
+void Bossa::forward()
+{
+    WKPageRef page = currentTab()->pageRef();
+    if (WKPageCanGoForward(page))
+        WKPageGoForward(page);
 }

@@ -41,6 +41,8 @@ public:
     void addTab(int tabId);
     void setCurrentTab(int tabId);
     void loadUrl(const char*);
+    void back();
+    void forward();
     Nix::WebView* currentTab();
 
 private:

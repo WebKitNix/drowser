@@ -49,6 +49,20 @@ static JSValueRef setCurrentTab(JSContextRef context, JSObjectRef function, JSOb
     return JSValueMakeNull(context);
 }
 
+static JSValueRef back(JSContextRef context, JSObjectRef function, JSObjectRef thisObject, size_t argumentCount, const JSValueRef arguments[], JSValueRef* exception)
+{
+    WKBundlePostMessage(gBundle, WKStringCreateWithUTF8CString("back"), NULL);
+
+    return JSValueMakeNull(context);
+}
+
+static JSValueRef forward(JSContextRef context, JSObjectRef function, JSObjectRef thisObject, size_t argumentCount, const JSValueRef arguments[], JSValueRef* exception)
+{
+    WKBundlePostMessage(gBundle, WKStringCreateWithUTF8CString("forward"), NULL);
+
+    return JSValueMakeNull(context);
+}
+
 static void registerJSFunction(JSGlobalContextRef context, const char* name, JSObjectCallAsFunctionCallback callback)
 {
     JSObjectRef window = JSContextGetGlobalObject(context);
@@ -66,6 +80,8 @@ void didClearWindowForFrame(WKBundlePageRef page, WKBundleFrameRef frame, WKBund
     REGISTER_JS_FUNCTION(context, addTab);
     REGISTER_JS_FUNCTION(context, loadUrl);
     REGISTER_JS_FUNCTION(context, setCurrentTab);
+    REGISTER_JS_FUNCTION(context, back);
+    REGISTER_JS_FUNCTION(context, forward);
 }
 
 void didCreatePage(WKBundleRef bundle, WKBundlePageRef page, const void* clientInfo)

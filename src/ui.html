@@ -33,7 +33,22 @@
 #urlBar {
     background-image: url(./images/urlbar_fill.png);
     background-repeat: repeat-x;
+    padding-left: 60px; /* due to back/forward buttons */
     padding-right: 4px; /* due to tabBar > input border */
+}
+
+#buttonBack {
+    height: 36px;
+    width: 28px;
+    background-image: url(./images/button_back.png);
+    float: left;
+}
+
+#buttonForward {
+    height: 36px;
+    width: 28px;
+    background-image: url(./images/button_forward.png);
+    float: left;
 }
 
 form {
@@ -43,7 +58,7 @@ form {
 input {
     background-color: transparent;
     border-image: url(./images/urlbar_input.png) 8 4 8 4 fill;
-    border-width: 8px 4 px 8px 4px;
+    border-width: 8px 4px 8px 4px;
     width: 100%;
     margin-right: -50px;
 }
@@ -95,12 +110,24 @@ function loadUrl()
     urlField.blur();
 }
 
+function goBack()
+{
+    window._back();
+}
+
+function goForward()
+{
+    window._forward();
+}
+
 </script>
 </head>
 <body onload="addEmptyTab();">
     <div id="tabBar">
         <span onclick="addEmptyTab()">add tab</span>
     </div>
+    <div id="buttonBack" onclick="goBack();"> </div>
+    <div id="buttonForward" onclick="goForward();"> </div>
     <div id="urlBar"><form onsubmit="loadUrl(); return false;"><input id="urlField" type="text" /></form></div>
 </body>
 </html>

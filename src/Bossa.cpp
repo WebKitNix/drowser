@@ -103,16 +103,16 @@ void Bossa::initUi()
     m_uiView->setFocused(true);
     m_uiView->setVisible(true);
     m_uiView->setActive(true);
-    m_uiView->setSize(m_window->size().first, m_window->size().second);
-    WKPageLoadURL(m_uiView->pageRef(), WKURLCreateWithUTF8CString(("file://" + appPath + "/ui.html").c_str()));
+    m_uiView->setSize(m_window->size());
 
     WKContextInjectedBundleClient bundleClient;
     std::memset(&bundleClient, 0, sizeof(bundleClient));
     bundleClient.clientInfo = this;
+    bundleClient.version = kWKContextInjectedBundleClientCurrentVersion;
     bundleClient.didReceiveMessageFromInjectedBundle = ::didReceiveMessageFromInjectedBundle;
     WKContextSetInjectedBundleClient(m_uiContext, &bundleClient);
 
-    m_window->makeCurrent();
+    WKPageLoadURL(m_uiView->pageRef(), WKURLCreateWithUTF8CString(("file://" + appPath + "/ui.html").c_str()));
 
     // context used on all webpages.
     m_webContext = WKContextCreate();
@@ -296,9 +296,9 @@ void Bossa::handleSizeChanged(int width, int height)
     if (!m_uiView)
         return;
 
-    m_uiView->setSize(width, height);
+    m_uiView->setSize(WKSizeMake(width, height));
     if (m_tabs.size())
-        currentTab()->setSize(width, height - UI_HEIGHT);
+        currentTab()->setSize(WKSizeMake(width, height - UI_HEIGHT));
     scheduleUpdateDisplay();
 }
 
@@ -307,7 +307,7 @@ void Bossa::handleClosed()
     g_main_loop_quit(m_mainLoop);
 }
 
-void Bossa::viewNeedsDisplay(int, int, int, int)
+void Bossa::viewNeedsDisplay(WKRect)
 {
     scheduleUpdateDisplay();
 }
@@ -338,8 +338,10 @@ void Bossa::scheduleUpdateDisplay()
 
 void Bossa::updateDisplay()
 {
-    std::pair<int, int> size = m_window->size();
-    glViewport(0, 0, m_window->size().first, m_window->size().second);
+    m_window->makeCurrent();
+
+    WKSize size = m_window->size();
+    glViewport(0, 0, m_window->size().width, m_window->size().height);
     glClearColor(1.0, 1.0, 1.0, 1.0);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -365,7 +367,7 @@ void Bossa::addTab(int tabId)
     view->setVisible(true);
     view->setActive(true);
     view->setUserViewportTransformation(m_webTransform);
-    view->setSize(m_window->size().first, m_window->size().second - 66);
+    view->setSize(m_window->size());
 
     m_tabs[tabId] = view;
     m_currentTab = tabId;
@@ -376,7 +378,7 @@ void Bossa::setCurrentTab(int tabId)
     if (!m_tabs.count(tabId))
         return;
     m_currentTab = tabId;
-    currentTab()->setSize(m_window->size().first, m_window->size().second - UI_HEIGHT);
+    currentTab()->setSize(m_window->size());
 }
 
 void Bossa::loadUrl(const char* url)

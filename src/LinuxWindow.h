@@ -2,14 +2,12 @@
 #define LinuxWindow_h
 
 #include "XlibEventSource.h"
+#include <WebKit2/WKGeometry.h>
 #include <X11/X.h>
 #include <X11/Xlib.h>
 #include <utility>
 
 void fatalError(const char* message);
-
-const int DEFAULT_WIDTH = 800;
-const int DEFAULT_HEIGHT = 600;
 
 class LinuxWindowClient {
 public:
@@ -27,10 +25,10 @@ public:
 
 class LinuxWindow : public XlibEventSource::Client {
 public:
-    LinuxWindow(LinuxWindowClient*, int width = DEFAULT_WIDTH, int height = DEFAULT_HEIGHT);
+    LinuxWindow(LinuxWindowClient*, int width, int height);
     ~LinuxWindow();
 
-    std::pair<int, int> size() const;
+    WKSize size() const;
 
     void makeCurrent();
     void swapBuffers();

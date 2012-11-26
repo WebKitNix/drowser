@@ -35,7 +35,7 @@ public:
     virtual void handleClosed();
 
     // WebViewClient
-    virtual void viewNeedsDisplay(int, int, int, int);
+    virtual void viewNeedsDisplay(WKRect);
     virtual void webProcessCrashed(WKStringRef url);
 
     void addTab(int tabId);

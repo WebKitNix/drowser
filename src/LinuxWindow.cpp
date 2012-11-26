@@ -42,9 +42,9 @@ LinuxWindow::~LinuxWindow()
     XCloseDisplay(m_display);
 }
 
-std::pair<int, int> LinuxWindow::size() const
+WKSize LinuxWindow::size() const
 {
-    return std::make_pair(m_width, m_height);
+    return WKSizeMake(m_width, m_height);
 }
 
 void LinuxWindow::handleXEvent(const XEvent& event)

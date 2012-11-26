@@ -25,7 +25,7 @@
 #include "XlibEventUtils.h"
 
 static const double DOUBLE_CLICK_INTERVAL = 300;
-static const int UI_HEIGHT = 53;
+static const int UI_HEIGHT = 65;
 
 Bossa::Bossa()
     : m_displayUpdateScheduled(false)

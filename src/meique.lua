@@ -14,14 +14,15 @@ bossa:usePackage(nix)
 bossa:addFiles([[
   main.cpp
   Bossa.cpp
-
-  LinuxWindow.cpp
-  LinuxWindowGLX.cpp
-  XlibEventSource.cpp
+  DesktopWindow.cpp
 ]])
 
--- meique TODO: missing copyFile and copyDirectory functions on meique API
-configureFile("ui.html", "ui.html")
+UNIX:bossa:addFiles([[
+  x11/DesktopWindowLinux.cpp
+  x11/XlibEventSource.cpp
+]])
+
+copyFile("ui.html")
 bossaUi = CustomTarget:new("ui", function()
     os.execute("ln -sd "..bossaUi:sourceDir().."images "..bossaUi:buildDir().." 2> /dev/null")
 end)

@@ -3,6 +3,7 @@
 
 #include "XKeyMappingTable.h"
 #include <NixEvents.h>
+#include <X11/Xutil.h>
 #include <X11/keysym.h>
 #include <ctype.h>
 #include <glib.h>

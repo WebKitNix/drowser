@@ -9,8 +9,6 @@
 #include <WebKit2/WKPreferences.h>
 #include <WebKit2/WKPreferencesPrivate.h>
 #include <GL/gl.h>
-#include <X11/Xutil.h>
-#include <X11/keysym.h>
 #include <cairo.h>
 #include <glib.h>
 #include <cassert>
@@ -22,14 +20,11 @@
 #include <limits.h>
 #include <string>
 
-#include "XlibEventUtils.h"
-
-static const double DOUBLE_CLICK_INTERVAL = 300;
 static const int UI_HEIGHT = 65;
 
 Bossa::Bossa()
     : m_displayUpdateScheduled(false)
-    , m_window(new LinuxWindow(this, 1024, 600))
+    , m_window(DesktopWindow::create(this, 1024, 600))
     , m_lastClickTime(0)
     , m_lastClickX(0)
     , m_lastClickY(0)
@@ -127,182 +122,66 @@ int Bossa::run()
     return 0;
 }
 
-void Bossa::handleExposeEvent()
+void Bossa::onWindowExpose()
 {
     scheduleUpdateDisplay();
 }
 
-static inline bool isKeypadKeysym(const KeySym symbol)
-{
-    // Following keypad symbols are specified on Xlib Programming Manual (section: Keyboard Encoding).
-    return (symbol >= 0xFF80 && symbol <= 0xFFBD);
-}
-
-static KeySym chooseSymbolForXKeyEvent(const XKeyEvent& event, bool* useUpperCase)
-{
-    KeySym firstSymbol = XLookupKeysym(const_cast<XKeyEvent*>(&event), 0);
-    KeySym secondSymbol = XLookupKeysym(const_cast<XKeyEvent*>(&event), 1);
-    KeySym lowerCaseSymbol, upperCaseSymbol, chosenSymbol;
-    XConvertCase(firstSymbol, &lowerCaseSymbol, &upperCaseSymbol);
-    bool numLockModifier = event.state & Mod2Mask;
-    bool capsLockModifier = event.state & LockMask;
-    bool shiftModifier = event.state & ShiftMask;
-    if (numLockModifier && isKeypadKeysym(secondSymbol)) {
-        chosenSymbol = shiftModifier ? firstSymbol : secondSymbol;
-    } else if (lowerCaseSymbol == upperCaseSymbol) {
-        chosenSymbol = shiftModifier ? secondSymbol : firstSymbol;
-    } else if (shiftModifier == capsLockModifier)
-        chosenSymbol = firstSymbol;
-    else
-        chosenSymbol = secondSymbol;
-
-    *useUpperCase = (lowerCaseSymbol != upperCaseSymbol && chosenSymbol == upperCaseSymbol);
-    XConvertCase(chosenSymbol, &lowerCaseSymbol, &upperCaseSymbol);
-    return upperCaseSymbol;
-}
-
-static Nix::KeyEvent convertXKeyEventToNixKeyEvent(const XKeyEvent& event, const KeySym& symbol, bool useUpperCase)
-{
-    Nix::KeyEvent ev;
-    ev.type = (event.type == KeyPress) ? Nix::InputEvent::KeyDown : Nix::InputEvent::KeyUp;
-    ev.modifiers = convertXEventModifiersToNativeModifiers(event.state);
-    ev.timestamp = convertXEventTimeToNixTimestamp(event.time);
-    ev.shouldUseUpperCase = useUpperCase;
-    ev.isKeypad = isKeypadKeysym(symbol);
-    ev.key = convertXKeySymToNativeKeycode(symbol);
-    return ev;
-}
-
-void Bossa::handleKeyPressEvent(const XKeyPressedEvent& event)
+void Bossa::onKeyPress(Nix::KeyEvent* event)
 {
     if (!m_uiView)
         return;
 
-    bool shouldUseUpperCase;
-    KeySym symbol = chooseSymbolForXKeyEvent(event, &shouldUseUpperCase);
-    Nix::KeyEvent ev = convertXKeyEventToNixKeyEvent(event, symbol, shouldUseUpperCase);
-    m_uiView->sendEvent(ev);
+    m_uiView->sendEvent(*event);
 }
 
-void Bossa::handleKeyReleaseEvent(const XKeyReleasedEvent& event)
+void Bossa::onKeyRelease(Nix::KeyEvent* event)
 {
     if (!m_uiView)
         return;
 
-    bool shouldUseUpperCase;
-    KeySym symbol = chooseSymbolForXKeyEvent(event, &shouldUseUpperCase);
-    Nix::KeyEvent ev = convertXKeyEventToNixKeyEvent(event, symbol, shouldUseUpperCase);
-    m_uiView->sendEvent(ev);
+    m_uiView->sendEvent(*event);
 }
 
-void Bossa::updateClickCount(const XButtonPressedEvent& event)
+void Bossa::onMouseWheel(Nix::WheelEvent* event)
 {
-    if (m_lastClickX != event.x
-        || m_lastClickY != event.y
-        || m_lastClickButton != event.button
-        || event.time - m_lastClickTime >= DOUBLE_CLICK_INTERVAL)
-        m_clickCount = 1;
-    else
-        ++m_clickCount;
-
-    m_lastClickX = event.x;
-    m_lastClickY = event.y;
-    m_lastClickButton = convertXEventButtonToNativeMouseButton(event.button);
-    m_lastClickTime = event.time;
+    m_uiView->sendEvent(*event);
 }
 
-void Bossa::handleWheelEvent(const XButtonPressedEvent& event)
-{
-    // Same constant we use inside WebView to calculate the ticks. See also WebCore::Scrollbar::pixelsPerLineStep().
-    const float pixelsPerStep = 40.0f;
-
-    Nix::WheelEvent ev;
-    ev.type = Nix::InputEvent::Wheel;
-    ev.modifiers = convertXEventModifiersToNativeModifiers(event.state);
-    ev.timestamp = convertXEventTimeToNixTimestamp(event.time);
-    ev.x = event.x;
-    ev.y = event.y;
-    ev.globalX = event.x_root;
-    ev.globalY = event.y_root;
-    ev.delta = pixelsPerStep * (event.button == 4 ? 1 : -1);
-    ev.orientation = event.state & Mod1Mask ? Nix::WheelEvent::Horizontal : Nix::WheelEvent::Vertical;
-    m_uiView->sendEvent(ev);
-}
-
-void Bossa::handleButtonPressEvent(const XButtonPressedEvent& event)
+void Bossa::onMousePress(Nix::MouseEvent* event)
 {
     if (!m_uiView)
         return;
 
-    if (event.button == 4 || event.button == 5) {
-        handleWheelEvent(event);
-        return;
-    }
-
-    updateClickCount(event);
-
-    Nix::MouseEvent ev;
-    ev.type = Nix::InputEvent::MouseDown;
-    ev.button = convertXEventButtonToNativeMouseButton(event.button);
-    ev.x = event.x;
-    ev.y = event.y;
-    ev.globalX = event.x_root;
-    ev.globalY = event.y_root;
-    ev.clickCount = m_clickCount;
-    ev.modifiers = convertXEventModifiersToNativeModifiers(event.state);
-    ev.timestamp = convertXEventTimeToNixTimestamp(event.time);
-
-    m_uiView->sendEvent(ev);
+    m_uiView->sendEvent(*event);
 }
 
-void Bossa::handleButtonReleaseEvent(const XButtonReleasedEvent& event)
+void Bossa::onMouseRelease(Nix::MouseEvent* event)
 {
-    if (!m_uiView || event.button == 4 || event.button == 5)
-        return;
-
-    Nix::MouseEvent ev;
-    ev.type = Nix::InputEvent::MouseUp;
-    ev.button = convertXEventButtonToNativeMouseButton(event.button);
-    ev.x = event.x;
-    ev.y = event.y;
-    ev.globalX = event.x_root;
-    ev.globalY = event.y_root;
-    ev.clickCount = 0;
-    ev.modifiers = convertXEventModifiersToNativeModifiers(event.state);
-    ev.timestamp = convertXEventModifiersToNativeModifiers(event.state);
-    m_uiView->sendEvent(ev);
+    m_uiView->sendEvent(*event);
 }
 
-void Bossa::handlePointerMoveEvent(const XPointerMovedEvent& event)
+void Bossa::onMouseMove(Nix::MouseEvent* event)
 {
     if (!m_uiView)
         return;
 
-    Nix::MouseEvent ev;
-    ev.type = Nix::InputEvent::MouseMove;
-    ev.button = Nix::MouseEvent::NoButton;
-    ev.x = event.x;
-    ev.y = event.y;
-    ev.globalX = event.x_root;
-    ev.globalY = event.y_root;
-    ev.clickCount = 0;
-    ev.modifiers = convertXEventModifiersToNativeModifiers(event.state);
-    ev.timestamp = convertXEventTimeToNixTimestamp(event.time);
-    m_uiView->sendEvent(ev);
+    m_uiView->sendEvent(*event);
 }
 
-void Bossa::handleSizeChanged(int width, int height)
+void Bossa::onWindowSizeChange(WKSize size)
 {
     if (!m_uiView)
         return;
 
-    m_uiView->setSize(WKSizeMake(width, height));
+    m_uiView->setSize(size);
     if (m_tabs.size())
-        currentTab()->setSize(WKSizeMake(width, height - UI_HEIGHT));
+        currentTab()->setSize(size);
+//         currentTab()->setSize(WKSizeMake(width, height - UI_HEIGHT));
     scheduleUpdateDisplay();
 }
 
-void Bossa::handleClosed()
+void Bossa::onWindowClose()
 {
     g_main_loop_quit(m_mainLoop);
 }

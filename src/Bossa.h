@@ -1,7 +1,7 @@
 #ifndef Bossa_h
 #define Bossa_h
 
-#include "LinuxWindow.h"
+#include "DesktopWindow.h"
 #include <glib.h>
 #include <WebView.h>
 #include <WebKit2/WKContext.h>
@@ -15,7 +15,7 @@ extern "C" {
 gboolean callUpdateDisplay(gpointer);
 }
 
-class Bossa : public LinuxWindowClient, public Nix::WebViewClient
+class Bossa : public DesktopWindowClient, public Nix::WebViewClient
 {
 public:
     Bossa();
@@ -23,16 +23,16 @@ public:
 
     int run();
 
-    // LinuxWindowClient
-    // TODO: Move X stuff away from here and remove LinuxWindowClient inheritance
-    virtual void handleExposeEvent();
-    virtual void handleKeyPressEvent(const XKeyPressedEvent&);
-    virtual void handleKeyReleaseEvent(const XKeyReleasedEvent&);
-    virtual void handleButtonPressEvent(const XButtonPressedEvent&);
-    virtual void handleButtonReleaseEvent(const XButtonReleasedEvent&);
-    virtual void handlePointerMoveEvent(const XPointerMovedEvent&);
-    virtual void handleSizeChanged(int, int);
-    virtual void handleClosed();
+    // DesktopWindowClient
+    virtual void onWindowExpose();
+    virtual void onKeyPress(Nix::KeyEvent*);
+    virtual void onKeyRelease(Nix::KeyEvent*);
+    virtual void onMousePress(Nix::MouseEvent*);
+    virtual void onMouseRelease(Nix::MouseEvent*);
+    virtual void onMouseMove(Nix::MouseEvent*);
+    virtual void onMouseWheel(Nix::WheelEvent*);
+    virtual void onWindowSizeChange(WKSize);
+    virtual void onWindowClose();
 
     // WebViewClient
     virtual void viewNeedsDisplay(WKRect);
@@ -48,7 +48,7 @@ public:
 private:
     GMainLoop* m_mainLoop;
     bool m_displayUpdateScheduled;
-    LinuxWindow* m_window;
+    DesktopWindow* m_window;
 
     Nix::WebView* m_uiView;
     WKContextRef m_uiContext;
@@ -70,8 +70,6 @@ private:
     void scheduleUpdateDisplay();
     void updateDisplay();
     void initUi();
-    void updateClickCount(const XButtonPressedEvent& event);
-    void handleWheelEvent(const XButtonPressedEvent& event);
 
     friend gboolean callUpdateDisplay(gpointer);
 };

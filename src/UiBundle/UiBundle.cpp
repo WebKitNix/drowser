@@ -14,74 +14,65 @@
 
 static WKBundleRef gBundle;
 
+static WKStringRef JSValueRefToWKStringRef(JSContextRef ctx, JSValueRef value)
+{
+    JSStringRef str = JSValueToStringCopy(ctx, value, 0);
+    WKStringRef result = WKStringCreateWithJSString(str);
+    JSStringRelease(str);
+    return result;
+}
 extern "C" {
 
-static JSValueRef addTab(JSContextRef context, JSObjectRef function, JSObjectRef thisObject, size_t argumentCount, const JSValueRef arguments[], JSValueRef* exception)
+static JSValueRef jsGenericCallback(JSContextRef ctx, JSObjectRef func, JSObjectRef thisObject, size_t argumentCount, const JSValueRef arguments[], JSValueRef*)
 {
-    assert(argumentCount == 1);
-    assert(JSValueIsNumber(context, arguments[0]));
+    WKTypeRef param = NULL;
+    if (argumentCount == 1) {
+        JSType type = JSValueGetType(ctx, arguments[0]);
+        switch(type) {
+            case kJSTypeNumber:
+                param = WKUInt64Create(JSValueToNumber(ctx, arguments[0], 0));
+                break;
+            case kJSTypeString:
+                param = JSValueRefToWKStringRef(ctx, arguments[0]);
+                break;
+            case kJSTypeNull:
+            case kJSTypeUndefined:
+            default:
+                break;
+        }
+    }
 
-    double tabId = JSValueToNumber(context, arguments[0], 0);
-    WKBundlePostMessage(gBundle, WKStringCreateWithUTF8CString("addTab"), WKUInt64Create(tabId));
+    JSStringRef propName = JSStringCreateWithUTF8CString("name");
+    JSValueRef propValue = JSObjectGetProperty(ctx, func, propName, 0);
+    JSStringRelease(propName);
 
-    return JSValueMakeNull(context);
+    WKStringRef funcName = JSValueRefToWKStringRef(ctx, propValue);
+    WKBundlePostMessage(gBundle, funcName, param);
+    WKRelease(param);
+    WKRelease(funcName);
+
+    return JSValueMakeNull(ctx);
 }
 
-static JSValueRef loadUrl(JSContextRef context, JSObjectRef function, JSObjectRef thisObject, size_t argumentCount, const JSValueRef arguments[], JSValueRef* exception)
-{
-    assert(argumentCount == 1);
-    assert(JSValueIsString(context, arguments[0]));
-
-    WKStringRef url = WKStringCreateWithJSString(JSValueToStringCopy(context, arguments[0], 0));
-    WKBundlePostMessage(gBundle, WKStringCreateWithUTF8CString("loadUrl"), url);
-
-    return JSValueMakeNull(context);
-}
-
-static JSValueRef setCurrentTab(JSContextRef context, JSObjectRef function, JSObjectRef thisObject, size_t argumentCount, const JSValueRef arguments[], JSValueRef* exception)
-{
-    assert(argumentCount == 1);
-    assert(JSValueIsNumber(context, arguments[0]));
-
-    double tabId = JSValueToNumber(context, arguments[0], 0);
-    WKBundlePostMessage(gBundle, WKStringCreateWithUTF8CString("setCurrentTab"), WKUInt64Create(tabId));
-
-    return JSValueMakeNull(context);
-}
-
-static JSValueRef back(JSContextRef context, JSObjectRef function, JSObjectRef thisObject, size_t argumentCount, const JSValueRef arguments[], JSValueRef* exception)
-{
-    WKBundlePostMessage(gBundle, WKStringCreateWithUTF8CString("back"), NULL);
-
-    return JSValueMakeNull(context);
-}
-
-static JSValueRef forward(JSContextRef context, JSObjectRef function, JSObjectRef thisObject, size_t argumentCount, const JSValueRef arguments[], JSValueRef* exception)
-{
-    WKBundlePostMessage(gBundle, WKStringCreateWithUTF8CString("forward"), NULL);
-
-    return JSValueMakeNull(context);
-}
-
-static void registerJSFunction(JSGlobalContextRef context, const char* name, JSObjectCallAsFunctionCallback callback)
+static void registerJSFunction(JSGlobalContextRef context, const char* name)
 {
     JSObjectRef window = JSContextGetGlobalObject(context);
     JSStringRef funcName = JSStringCreateWithUTF8CString(name);
-    JSObjectRef jsFunc = JSObjectMakeFunctionWithCallback(context, funcName, callback);
-    JSObjectSetProperty(context, window, funcName, jsFunc, kJSPropertyAttributeReadOnly | kJSPropertyAttributeDontDelete, 0);
-}
 
-#define REGISTER_JS_FUNCTION(context, function) registerJSFunction(context, "_" #function, function)
+    JSObjectRef jsFunc = JSObjectMakeFunctionWithCallback(context, funcName, jsGenericCallback);
+    JSObjectSetProperty(context, window, funcName, jsFunc, kJSPropertyAttributeReadOnly | kJSPropertyAttributeDontDelete, 0);
+    JSStringRelease(funcName);
+}
 
 void didClearWindowForFrame(WKBundlePageRef page, WKBundleFrameRef frame, WKBundleScriptWorldRef world, const void *clientInfo)
 {
     JSGlobalContextRef context = WKBundleFrameGetJavaScriptContextForWorld(frame, world);
 
-    REGISTER_JS_FUNCTION(context, addTab);
-    REGISTER_JS_FUNCTION(context, loadUrl);
-    REGISTER_JS_FUNCTION(context, setCurrentTab);
-    REGISTER_JS_FUNCTION(context, back);
-    REGISTER_JS_FUNCTION(context, forward);
+    registerJSFunction(context, "_addTab");
+    registerJSFunction(context, "_loadUrl");
+    registerJSFunction(context, "_setCurrentTab");
+    registerJSFunction(context, "_back");
+    registerJSFunction(context, "_forward");
 }
 
 void didCreatePage(WKBundleRef bundle, WKBundlePageRef page, const void* clientInfo)

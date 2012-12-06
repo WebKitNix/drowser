@@ -48,20 +48,20 @@ extern "C" {
 static void didReceiveMessageFromInjectedBundle(WKContextRef page, WKStringRef messageName, WKTypeRef messageBody, const void *clientInfo)
 {
     Bossa* self = reinterpret_cast<Bossa*>(const_cast<void*>(clientInfo));
-    if (WKStringIsEqualToUTF8CString(messageName, "addTab")) {
+    if (WKStringIsEqualToUTF8CString(messageName, "_addTab")) {
         self->addTab( WKUInt64GetValue((WKUInt64Ref)messageBody) );
-    } else if (WKStringIsEqualToUTF8CString(messageName, "setCurrentTab")) {
+    } else if (WKStringIsEqualToUTF8CString(messageName, "_setCurrentTab")) {
         self->setCurrentTab( WKUInt64GetValue((WKUInt64Ref)messageBody) );
-    } else if (WKStringIsEqualToUTF8CString(messageName, "loadUrl")) {
+    } else if (WKStringIsEqualToUTF8CString(messageName, "_loadUrl")) {
         WKStringRef wkUrl = reinterpret_cast<WKStringRef>(messageBody);
         size_t wkUrlSize = WKStringGetMaximumUTF8CStringSize(wkUrl);
         char* buffer = new char[wkUrlSize + 1];
         WKStringGetUTF8CString(wkUrl, buffer, wkUrlSize);
         self->loadUrl(buffer);
         delete[] buffer;
-    } else if (WKStringIsEqualToUTF8CString(messageName, "back")) {
+    } else if (WKStringIsEqualToUTF8CString(messageName, "_back")) {
         self->back();
-    } else if (WKStringIsEqualToUTF8CString(messageName, "forward")) {
+    } else if (WKStringIsEqualToUTF8CString(messageName, "_forward")) {
         self->forward();
     }
 }

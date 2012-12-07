@@ -20,11 +20,14 @@
 #include <limits.h>
 #include <string>
 
+#include "InjectedBundleGlue.h"
+
 static const int UI_HEIGHT = 65;
 
 Bossa::Bossa()
     : m_displayUpdateScheduled(false)
     , m_window(DesktopWindow::create(this, 1024, 600))
+    , m_glue(0)
     , m_lastClickTime(0)
     , m_lastClickX(0)
     , m_lastClickY(0)
@@ -42,29 +45,7 @@ Bossa::~Bossa()
      g_main_loop_unref(m_mainLoop);
      delete m_uiView;
      delete m_window;
-}
-
-extern "C" {
-static void didReceiveMessageFromInjectedBundle(WKContextRef page, WKStringRef messageName, WKTypeRef messageBody, const void *clientInfo)
-{
-    Bossa* self = reinterpret_cast<Bossa*>(const_cast<void*>(clientInfo));
-    if (WKStringIsEqualToUTF8CString(messageName, "_addTab")) {
-        self->addTab( WKUInt64GetValue((WKUInt64Ref)messageBody) );
-    } else if (WKStringIsEqualToUTF8CString(messageName, "_setCurrentTab")) {
-        self->setCurrentTab( WKUInt64GetValue((WKUInt64Ref)messageBody) );
-    } else if (WKStringIsEqualToUTF8CString(messageName, "_loadUrl")) {
-        WKStringRef wkUrl = reinterpret_cast<WKStringRef>(messageBody);
-        size_t wkUrlSize = WKStringGetMaximumUTF8CStringSize(wkUrl);
-        char* buffer = new char[wkUrlSize + 1];
-        WKStringGetUTF8CString(wkUrl, buffer, wkUrlSize);
-        self->loadUrl(buffer);
-        delete[] buffer;
-    } else if (WKStringIsEqualToUTF8CString(messageName, "_back")) {
-        self->back();
-    } else if (WKStringIsEqualToUTF8CString(messageName, "_forward")) {
-        self->forward();
-    }
-}
+     delete m_glue;
 }
 
 static std::string getApplicationPath()
@@ -100,12 +81,11 @@ void Bossa::initUi()
     m_uiView->setActive(true);
     m_uiView->setSize(m_window->size());
 
-    WKContextInjectedBundleClient bundleClient;
-    std::memset(&bundleClient, 0, sizeof(bundleClient));
-    bundleClient.clientInfo = this;
-    bundleClient.version = kWKContextInjectedBundleClientCurrentVersion;
-    bundleClient.didReceiveMessageFromInjectedBundle = ::didReceiveMessageFromInjectedBundle;
-    WKContextSetInjectedBundleClient(m_uiContext, &bundleClient);
+    m_glue = new InjectedBundleGlue(m_uiContext);
+    m_glue->bind("_addTab", this, &Bossa::addTab);
+    m_glue->bind("_setCurrentTab", this, &Bossa::setCurrentTab);
+    m_glue->bind("_loadUrl", this, &Bossa::loadUrl);
+    m_glue->bind("_back", this, &Bossa::back);
 
     WKPageLoadURL(m_uiView->pageRef(), WKURLCreateWithUTF8CString(("file://" + appPath + "/ui.html").c_str()));
 
@@ -260,10 +240,10 @@ void Bossa::setCurrentTab(int tabId)
     currentTab()->setSize(m_window->size());
 }
 
-void Bossa::loadUrl(const char* url)
+void Bossa::loadUrl(std::string url)
 {
-    printf("Load URL: %s\n", url);
-    WKPageLoadURL(currentTab()->pageRef(), WKURLCreateWithUTF8CString(url));
+    printf("Load URL: %s\n", url.c_str());
+    WKPageLoadURL(currentTab()->pageRef(), WKURLCreateWithUTF8CString(url.c_str()));
 }
 
 void Bossa::back()

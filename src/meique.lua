@@ -15,6 +15,7 @@ bossa:addFiles([[
   main.cpp
   Bossa.cpp
   DesktopWindow.cpp
+  InjectedBundleGlue.cpp
 ]])
 
 UNIX:bossa:addFiles([[
@@ -27,5 +28,6 @@ bossaUi = CustomTarget:new("ui", function()
     os.execute("ln -sd "..bossaUi:sourceDir().."images "..bossaUi:buildDir().." 2> /dev/null")
 end)
 bossa:addDependency(bossaUi)
+bossa:addCustomFlags("-std=c++11")
 
 addSubdirectory("UiBundle")

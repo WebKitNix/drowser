@@ -6,6 +6,7 @@
 #include <WebView.h>
 #include <WebKit2/WKContext.h>
 #include <map>
+#include <string>
 
 namespace Nix {
 class WebView;
@@ -14,6 +15,8 @@ class WebView;
 extern "C" {
 gboolean callUpdateDisplay(gpointer);
 }
+
+class InjectedBundleGlue;
 
 class Bossa : public DesktopWindowClient, public Nix::WebViewClient
 {
@@ -40,7 +43,7 @@ public:
 
     void addTab(int tabId);
     void setCurrentTab(int tabId);
-    void loadUrl(const char*);
+    void loadUrl(std::string);
     void back();
     void forward();
     Nix::WebView* currentTab();
@@ -49,6 +52,7 @@ private:
     GMainLoop* m_mainLoop;
     bool m_displayUpdateScheduled;
     DesktopWindow* m_window;
+    InjectedBundleGlue* m_glue;
 
     Nix::WebView* m_uiView;
     WKContextRef m_uiContext;

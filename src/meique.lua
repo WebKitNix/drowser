@@ -30,6 +30,9 @@ bossaUi = CustomTarget:new("ui", function()
     os.execute("ln -sd "..bossaUi:sourceDir().."images "..bossaUi:buildDir().." 2> /dev/null")
 end)
 bossa:addDependency(bossaUi)
-bossa:addCustomFlags("-std=c++11")
+bossa:addCustomFlags("-std=c++11 -D'UI_SEARCH_PATH=\""..bossa:sourceDir().."ui\"'")
+bossa:install("bin")
 
 addSubdirectory("UiBundle")
+-- meique doesn't support targetless installs yet.
+-- addSubdirectory("ui")

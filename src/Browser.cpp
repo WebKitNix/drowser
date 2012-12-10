@@ -83,7 +83,8 @@ void Browser::initUi()
     m_glue->bind("_loadUrl", this, &Browser::loadUrl);
     m_glue->bind("_back", this, &Browser::back);
 
-    WKPageLoadURL(m_uiView->pageRef(), WKURLCreateWithUTF8CString(("file://" + appPath + "/ui.html").c_str()));
+    // FIXME: This should probably be a list of location to search for the Ui files.
+    WKPageLoadURL(m_uiView->pageRef(), WKURLCreateWithUTF8CString("file://" UI_SEARCH_PATH "/ui.html"));
 
     // context used on all webpages.
     m_webContext = WKContextCreate();

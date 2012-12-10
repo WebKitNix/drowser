@@ -71,6 +71,11 @@ private:
     WKPageGroupRef m_webPageGroup;
     WKContextRef m_webContext;
 
+    template<typename T>
+    bool sendEventToPage(T event);
+    template<typename T>
+    void sendEvent(T event);
+
     void scheduleUpdateDisplay();
     void updateDisplay();
     void initUi();

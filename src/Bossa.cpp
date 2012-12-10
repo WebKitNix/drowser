@@ -102,6 +102,23 @@ int Bossa::run()
     return 0;
 }
 
+template<typename T>
+void Bossa::sendEvent(T event)
+{
+    currentTab()->sendEvent(*event);
+}
+
+template<typename T>
+bool Bossa::sendEventToPage(T event)
+{
+    if (event->y > UI_HEIGHT && !m_tabs.empty()) {
+        event->y -= UI_HEIGHT;
+        sendEvent(event);
+        return true;
+    }
+    return false;
+}
+
 void Bossa::onWindowExpose()
 {
     scheduleUpdateDisplay();
@@ -125,7 +142,7 @@ void Bossa::onKeyRelease(Nix::KeyEvent* event)
 
 void Bossa::onMouseWheel(Nix::WheelEvent* event)
 {
-    m_uiView->sendEvent(*event);
+    sendEventToPage(event);
 }
 
 void Bossa::onMousePress(Nix::MouseEvent* event)
@@ -133,12 +150,14 @@ void Bossa::onMousePress(Nix::MouseEvent* event)
     if (!m_uiView)
         return;
 
-    m_uiView->sendEvent(*event);
+    if (!sendEventToPage(event))
+        m_uiView->sendEvent(*event);
 }
 
 void Bossa::onMouseRelease(Nix::MouseEvent* event)
 {
-    m_uiView->sendEvent(*event);
+    if (!sendEventToPage(event))
+        m_uiView->sendEvent(*event);
 }
 
 void Bossa::onMouseMove(Nix::MouseEvent* event)
@@ -146,7 +165,8 @@ void Bossa::onMouseMove(Nix::MouseEvent* event)
     if (!m_uiView)
         return;
 
-    m_uiView->sendEvent(*event);
+    if (!sendEventToPage(event))
+        m_uiView->sendEvent(*event);
 }
 
 void Bossa::onWindowSizeChange(WKSize size)

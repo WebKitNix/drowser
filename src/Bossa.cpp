@@ -145,14 +145,19 @@ void Bossa::onMousePress(Nix::MouseEvent* event)
     if (!m_uiView)
         return;
 
-    if (!sendEventToPage(event))
+    if (!sendEventToPage(event)) {
+        Nix::MouseEvent releaseEvent;
+        std::memcpy(&releaseEvent, event, sizeof(Nix::MouseEvent));
+        releaseEvent.type = Nix::InputEvent::MouseUp;
+
         m_uiView->sendEvent(*event);
+        m_uiView->sendEvent(releaseEvent);
+    }
 }
 
 void Bossa::onMouseRelease(Nix::MouseEvent* event)
 {
-    if (!sendEventToPage(event))
-        m_uiView->sendEvent(*event);
+    sendEventToPage(event);
 }
 
 void Bossa::onMouseMove(Nix::MouseEvent* event)

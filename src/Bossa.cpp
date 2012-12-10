@@ -28,11 +28,6 @@ Bossa::Bossa()
     : m_displayUpdateScheduled(false)
     , m_window(DesktopWindow::create(this, 1024, 600))
     , m_glue(0)
-    , m_lastClickTime(0)
-    , m_lastClickX(0)
-    , m_lastClickY(0)
-    , m_lastClickButton(Nix::MouseEvent::NoButton)
-    , m_clickCount(0)
 {
     m_mainLoop = g_main_loop_new(0, false);
 

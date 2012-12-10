@@ -58,13 +58,6 @@ private:
     WKContextRef m_uiContext;
     WKPageGroupRef m_uiPageGroup;
 
-    double m_lastClickTime;
-    int m_lastClickX;
-    int m_lastClickY;
-    Nix::MouseEvent::Button m_lastClickButton;
-    unsigned m_clickCount;
-
-
     std::map<int, Nix::WebView*> m_tabs;
     int m_currentTab;
     cairo_matrix_t m_webTransform;

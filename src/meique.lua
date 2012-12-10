@@ -24,6 +24,8 @@ UNIX:bossa:addFiles([[
 ]])
 
 copyFile("ui.html")
+copyFile("jquery-1.8.3.min.js")
+copyFile("style.css")
 bossaUi = CustomTarget:new("ui", function()
     os.execute("ln -sd "..bossaUi:sourceDir().."images "..bossaUi:buildDir().." 2> /dev/null")
 end)

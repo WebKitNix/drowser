@@ -1,0 +1,78 @@
+* {
+    margin: 0px;
+    padding: 0px;
+    font-family: sans-serif;
+}
+
+#tabBar {
+    background-image: url(./images/tab_base_fill.png);
+    background-repeat: repeat-x;
+    height: 30px;
+}
+#tabContainer {
+    float: left;
+}
+
+.tab {
+    min-width: 160px;
+    border-width:10px 23px 4px 12px;
+    border-image: url(./images/tab_inactive.png) 10 23 4 12 fill;
+    line-height: 16px;
+    font-size: 16px;
+    float: left;
+    margin-right: -18px;
+    z-index: 0;
+}
+
+#plus {
+    min-width: 0px;
+    text-align: center;
+}
+
+.active {
+    border-image-source :url(./images/tab_active.png);
+    position: relative;
+    z-index: 1;
+}
+
+.toolBarRow {
+    background-image: url(./images/urlbar_fill.png);
+    background-repeat: repeat-x;
+    clear: both;
+}
+
+#btnBack {
+    width: 30px;
+    height: 36px;
+    float: left;
+    background-image: url(./images/btn_back.png);
+}
+
+#btnForward {
+    width: 30px;
+    height: 36px;
+    float: left;
+    background-image: url(./images/btn_forward.png);
+}
+
+#btnRefresh {
+    width: 34px;
+    height: 36px;
+    float: left;
+    background-image: url(./images/btn_refresh.png);
+}
+
+#urlBar {
+    user-select: none;
+    height: 20px;
+    background-color: transparent;
+    border-image: url(./images/urlbar_input.png) 8 4 8 4 fill;
+    border-width: 8px 4px 8px 4px;
+    margin-left: 60px;
+    white-space: nowrap;
+    overflow: hidden;
+}
+
+#urlBar:focus {
+    outline: none;
+}

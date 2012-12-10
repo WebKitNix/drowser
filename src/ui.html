@@ -1,86 +1,59 @@
 <!DOCTYPE html>
 <html>
 <head>
-<style type="text/css">
-* {
-    margin: 0px;
-    padding: 0px;
-}
-
-#tabBar {
-    height: 30px;
-    background-image: url(./images/tab_base_fill.png);
-    background-repeat: repeat-x;
-}
-
-.tab {
-    min-width: 160px;
-    border-width:10px 23px 4px 12px;
-    border-image: url(./images/tab_inactive.png) 10 23 4 12 fill;
-    line-height: 16px;
-    font-size: 16px;
-    float: left;
-    margin-right: -18px;
-    z-index: 0;
-}
-
-.active {
-    border-image-source :url(./images/tab_active.png);
-    position: relative;
-    z-index: 1;
-}
-
-#urlBar {
-    background-image: url(./images/urlbar_fill.png);
-    background-repeat: repeat-x;
-    padding-left: 60px; /* due to back/forward buttons */
-    padding-right: 4px; /* due to tabBar > input border */
-}
-
-#buttonBack {
-    height: 36px;
-    width: 28px;
-    background-image: url(./images/button_back.png);
-    float: left;
-}
-
-#buttonForward {
-    height: 36px;
-    width: 28px;
-    background-image: url(./images/button_forward.png);
-    float: left;
-}
-
-form {
-    width: 100%;
-}
-
-input {
-    background-color: transparent;
-    border-image: url(./images/urlbar_input.png) 8 4 8 4 fill;
-    border-width: 8px 4px 8px 4px;
-    width: 100%;
-    margin-right: -50px;
-}
-
-</style>
+<link rel="stylesheet" type="text/css" href="style.css" />
+<script type="text/javascript" src="jquery-1.8.3.min.js"></script>
 <script type="text/javascript">
+$(document).ready(function() {
+
+    var urlBar = $("#urlBar");
+    urlBar.focusout(function() {
+        $("#urlBar").attr("contentEditable", "false");
+        $("#urlBar").css("text-overflow", "ellipsis");
+    });
+
+    urlBar.keypress(function(e) {
+        if (e.which == 13) {
+            loadUrl();
+            return false;
+        }
+        return true;
+    });
+
+    urlBar.click(function() {
+        $("#urlBar").attr("contentEditable", "true");
+        $("#urlBar").css("text-overflow", "clip");
+    });
+
+    $("#plus").click(addEmptyTab);
+
+    if (!window._addTab) {
+        var foo = function() {};
+        window._addTab = foo;
+        window._setCurrentTab = foo;
+        window._loadUrl = foo;
+        window._back = foo;
+        window._forward = foo;
+    }
+
+    addEmptyTab();
+});
 
 activeTab = null;
 nextId = 0;
 
 function addEmptyTab()
 {
-    var tabBar = document.getElementById("tabBar");
     var div = document.createElement("div");
     var tabId = nextId++;
     div.id = String(tabId);
     div.className = "tab";
     div.appendChild(document.createTextNode("New Tab"));
     div.onclick = function() { selectTab(div); }
-    tabBar.appendChild(div);
+    document.getElementById("tabContainer").appendChild(div);
     window._addTab(tabId);
     div._url = "http://";
+    $("#urlBar").text(div._url);
     selectTab(div);
 }
 
@@ -95,19 +68,19 @@ function selectTab(obj)
     obj.className = "tab active";
     activeTab = obj;
     window._setCurrentTab(parseInt(activeTab.id));
-    var urlField = document.getElementById("urlField");
-    urlField.value = activeTab._url;
-    if (urlField.value == "http://")
-        urlField.focus();
+    var urlBar = document.getElementById("urlBar");
+    urlBar.value = activeTab._url;
+    if (urlBar.innerText == "http://")
+        urlBar.focus();
 }
 
 function loadUrl()
 {
-    var urlField = document.getElementById("urlField");
-    var url = urlField.value;
+    var urlBar = document.getElementById("urlBar");
+    var url = urlBar.innerText;
     window._loadUrl(url);
     activeTab._url = url;
-    urlField.blur();
+    urlBar.blur();
 }
 
 function goBack()
@@ -122,12 +95,16 @@ function goForward()
 
 </script>
 </head>
-<body onload="addEmptyTab();">
+<body>
     <div id="tabBar">
-        <span onclick="addEmptyTab()">add tab</span>
+        <div id="tabContainer"></div>
+        <div id="plus" class="tab"><img src="images/plus.png" /></div>
     </div>
-    <div id="buttonBack" onclick="goBack();"> </div>
-    <div id="buttonForward" onclick="goForward();"> </div>
-    <div id="urlBar"><form onsubmit="loadUrl(); return false;"><input id="urlField" type="text" /></form></div>
+    <div class="toolBarRow">
+        <div id="btnBack" onclick="goBack();"></div>
+        <div id="btnForward" onclick="goForward();"></div>
+        <div id="btnRefresh" onClick=""></div>
+        <div id="urlBar"></div>
+    </div>
 </body>
 </html>

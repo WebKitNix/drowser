@@ -1,5 +1,5 @@
-#ifndef Bossa_h
-#define Bossa_h
+#ifndef Browser_h
+#define Browser_h
 
 #include "DesktopWindow.h"
 #include <glib.h>
@@ -18,11 +18,11 @@ gboolean callUpdateDisplay(gpointer);
 
 class InjectedBundleGlue;
 
-class Bossa : public DesktopWindowClient, public Nix::WebViewClient
+class Browser : public DesktopWindowClient, public Nix::WebViewClient
 {
 public:
-    Bossa();
-    ~Bossa();
+    Browser();
+    ~Browser();
 
     int run();
 

@@ -13,7 +13,7 @@ bossa:usePackage(nix)
 
 bossa:addFiles([[
   main.cpp
-  Bossa.cpp
+  Browser.cpp
   DesktopWindow.cpp
   InjectedBundleGlue.cpp
 ]])

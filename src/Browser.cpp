@@ -1,4 +1,4 @@
-#include "Bossa.h"
+#include "Browser.h"
 
 #include <WebKit2/WKContext.h>
 #include <WebKit2/WKNumber.h>
@@ -24,7 +24,7 @@
 
 static const int UI_HEIGHT = 65;
 
-Bossa::Bossa()
+Browser::Browser()
     : m_displayUpdateScheduled(false)
     , m_window(DesktopWindow::create(this, 1024, 600))
     , m_glue(0)
@@ -36,7 +36,7 @@ Bossa::Bossa()
     cairo_matrix_init_translate(&m_webTransform, 0, UI_HEIGHT);
 }
 
-Bossa::~Bossa()
+Browser::~Browser()
 {
      g_main_loop_unref(m_mainLoop);
      delete m_uiView;
@@ -61,11 +61,11 @@ static std::string getApplicationPath()
     }
 }
 
-void Bossa::initUi()
+void Browser::initUi()
 {
     const std::string appPath = getApplicationPath();
     m_uiContext = WKContextCreateWithInjectedBundlePath(WKStringCreateWithUTF8CString((appPath + "/UiBundle/libUiBundle.so").c_str()));
-    m_uiPageGroup = WKPageGroupCreateWithIdentifier(WKStringCreateWithUTF8CString("Bossa"));
+    m_uiPageGroup = WKPageGroupCreateWithIdentifier(WKStringCreateWithUTF8CString("Browser"));
 
     WKPreferencesRef preferences = WKPageGroupGetPreferences(m_uiPageGroup);
     WKPreferencesSetAcceleratedCompositingEnabled(preferences, true);
@@ -78,10 +78,10 @@ void Bossa::initUi()
     m_uiView->setSize(m_window->size());
 
     m_glue = new InjectedBundleGlue(m_uiContext);
-    m_glue->bind("_addTab", this, &Bossa::addTab);
-    m_glue->bind("_setCurrentTab", this, &Bossa::setCurrentTab);
-    m_glue->bind("_loadUrl", this, &Bossa::loadUrl);
-    m_glue->bind("_back", this, &Bossa::back);
+    m_glue->bind("_addTab", this, &Browser::addTab);
+    m_glue->bind("_setCurrentTab", this, &Browser::setCurrentTab);
+    m_glue->bind("_loadUrl", this, &Browser::loadUrl);
+    m_glue->bind("_back", this, &Browser::back);
 
     WKPageLoadURL(m_uiView->pageRef(), WKURLCreateWithUTF8CString(("file://" + appPath + "/ui.html").c_str()));
 
@@ -92,20 +92,20 @@ void Bossa::initUi()
     WKPreferencesSetAcceleratedCompositingEnabled(webPreferences, true);
 }
 
-int Bossa::run()
+int Browser::run()
 {
     g_main_loop_run(m_mainLoop);
     return 0;
 }
 
 template<typename T>
-void Bossa::sendEvent(T event)
+void Browser::sendEvent(T event)
 {
     currentTab()->sendEvent(*event);
 }
 
 template<typename T>
-bool Bossa::sendEventToPage(T event)
+bool Browser::sendEventToPage(T event)
 {
     if (event->y > UI_HEIGHT && !m_tabs.empty()) {
         event->y -= UI_HEIGHT;
@@ -115,12 +115,12 @@ bool Bossa::sendEventToPage(T event)
     return false;
 }
 
-void Bossa::onWindowExpose()
+void Browser::onWindowExpose()
 {
     scheduleUpdateDisplay();
 }
 
-void Bossa::onKeyPress(Nix::KeyEvent* event)
+void Browser::onKeyPress(Nix::KeyEvent* event)
 {
     if (!m_uiView)
         return;
@@ -131,17 +131,17 @@ void Bossa::onKeyPress(Nix::KeyEvent* event)
         currentTab()->sendEvent(*event);
 }
 
-void Bossa::onKeyRelease(Nix::KeyEvent* event)
+void Browser::onKeyRelease(Nix::KeyEvent* event)
 {
     onKeyPress(event);
 }
 
-void Bossa::onMouseWheel(Nix::WheelEvent* event)
+void Browser::onMouseWheel(Nix::WheelEvent* event)
 {
     sendEventToPage(event);
 }
 
-void Bossa::onMousePress(Nix::MouseEvent* event)
+void Browser::onMousePress(Nix::MouseEvent* event)
 {
     if (!m_uiView)
         return;
@@ -157,12 +157,12 @@ void Bossa::onMousePress(Nix::MouseEvent* event)
     }
 }
 
-void Bossa::onMouseRelease(Nix::MouseEvent* event)
+void Browser::onMouseRelease(Nix::MouseEvent* event)
 {
     sendEventToPage(event);
 }
 
-void Bossa::onMouseMove(Nix::MouseEvent* event)
+void Browser::onMouseMove(Nix::MouseEvent* event)
 {
     if (!m_uiView)
         return;
@@ -171,7 +171,7 @@ void Bossa::onMouseMove(Nix::MouseEvent* event)
         m_uiView->sendEvent(*event);
 }
 
-void Bossa::onWindowSizeChange(WKSize size)
+void Browser::onWindowSizeChange(WKSize size)
 {
     if (!m_uiView)
         return;
@@ -184,24 +184,24 @@ void Bossa::onWindowSizeChange(WKSize size)
     scheduleUpdateDisplay();
 }
 
-void Bossa::onWindowClose()
+void Browser::onWindowClose()
 {
     g_main_loop_quit(m_mainLoop);
 }
 
-void Bossa::viewNeedsDisplay(WKRect)
+void Browser::viewNeedsDisplay(WKRect)
 {
     scheduleUpdateDisplay();
 }
 
-void Bossa::webProcessCrashed(WKStringRef url)
+void Browser::webProcessCrashed(WKStringRef url)
 {
     puts("UI Webprocess crashed :-(");
 }
 
 gboolean callUpdateDisplay(gpointer data)
 {
-    Bossa* browser = reinterpret_cast<Bossa*>(data);
+    Browser* browser = reinterpret_cast<Browser*>(data);
 
     assert(browser->m_displayUpdateScheduled);
     browser->m_displayUpdateScheduled = false;
@@ -209,7 +209,7 @@ gboolean callUpdateDisplay(gpointer data)
     return 0;
 }
 
-void Bossa::scheduleUpdateDisplay()
+void Browser::scheduleUpdateDisplay()
 {
     if (m_displayUpdateScheduled)
         return;
@@ -218,7 +218,7 @@ void Bossa::scheduleUpdateDisplay()
     g_timeout_add(0, callUpdateDisplay, this);
 }
 
-void Bossa::updateDisplay()
+void Browser::updateDisplay()
 {
     m_window->makeCurrent();
 
@@ -235,12 +235,12 @@ void Bossa::updateDisplay()
     m_window->swapBuffers();
 }
 
-Nix::WebView* Bossa::currentTab()
+Nix::WebView* Browser::currentTab()
 {
     return m_tabs[m_currentTab];
 }
 
-void Bossa::addTab(int tabId)
+void Browser::addTab(int tabId)
 {
     assert(m_tabs.count(tabId) == 0);
     Nix::WebView* view = Nix::WebView::create(m_webContext, m_webPageGroup, this);
@@ -257,7 +257,7 @@ void Bossa::addTab(int tabId)
     m_currentTab = tabId;
 }
 
-void Bossa::setCurrentTab(int tabId)
+void Browser::setCurrentTab(int tabId)
 {
     if (!m_tabs.count(tabId))
         return;
@@ -265,21 +265,21 @@ void Bossa::setCurrentTab(int tabId)
     currentTab()->setSize(m_window->size());
 }
 
-void Bossa::loadUrl(std::string url)
+void Browser::loadUrl(std::string url)
 {
     m_uiFocused = false;
     printf("Load URL: %s\n", url.c_str());
     WKPageLoadURL(currentTab()->pageRef(), WKURLCreateWithUTF8CString(url.c_str()));
 }
 
-void Bossa::back()
+void Browser::back()
 {
     WKPageRef page = currentTab()->pageRef();
     if (WKPageCanGoBack(page))
         WKPageGoBack(page);
 }
 
-void Bossa::forward()
+void Browser::forward()
 {
     WKPageRef page = currentTab()->pageRef();
     if (WKPageCanGoForward(page))

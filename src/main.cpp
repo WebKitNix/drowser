@@ -1,7 +1,7 @@
-#include "Bossa.h"
+#include "Browser.h"
 
 int main(int argc, char** argv)
 {
-	Bossa bossa;
-	return bossa.run();
+    Browser browser;
+    return browser.run();
 }

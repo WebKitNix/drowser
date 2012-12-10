@@ -177,9 +177,10 @@ void Bossa::onWindowSizeChange(WKSize size)
         return;
 
     m_uiView->setSize(size);
-    if (m_tabs.size())
+    if (m_tabs.size()) {
+        size.height -= UI_HEIGHT;
         currentTab()->setSize(size);
-//         currentTab()->setSize(WKSizeMake(width, height - UI_HEIGHT));
+    }
     scheduleUpdateDisplay();
 }
 
@@ -248,7 +249,9 @@ void Bossa::addTab(int tabId)
     view->setVisible(true);
     view->setActive(true);
     view->setUserViewportTransformation(m_webTransform);
-    view->setSize(m_window->size());
+    WKSize wndSize = m_window->size();
+    wndSize.height -= UI_HEIGHT;
+    view->setSize(wndSize);
 
     m_tabs[tabId] = view;
     m_currentTab = tabId;

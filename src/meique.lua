@@ -4,21 +4,21 @@ x11 = findPackage("x11", REQUIRED)
 cairo = findPackage("cairo", REQUIRED)
 nix = findPackage("WebKitNix", REQUIRED)
 
-bossa = Executable:new("bossa")
-bossa:usePackage(glib)
-bossa:usePackage(openGL)
-bossa:usePackage(x11)
-bossa:usePackage(cairo)
-bossa:usePackage(nix)
+browser = Executable:new("browser")
+browser:usePackage(glib)
+browser:usePackage(openGL)
+browser:usePackage(x11)
+browser:usePackage(cairo)
+browser:usePackage(nix)
 
-bossa:addFiles([[
+browser:addFiles([[
   main.cpp
   Browser.cpp
   DesktopWindow.cpp
   InjectedBundleGlue.cpp
 ]])
 
-UNIX:bossa:addFiles([[
+UNIX:browser:addFiles([[
   x11/DesktopWindowLinux.cpp
   x11/XlibEventSource.cpp
 ]])
@@ -26,12 +26,12 @@ UNIX:bossa:addFiles([[
 copyFile("ui.html")
 copyFile("jquery-1.8.3.min.js")
 copyFile("style.css")
-bossaUi = CustomTarget:new("ui", function()
-    os.execute("ln -sd "..bossaUi:sourceDir().."images "..bossaUi:buildDir().." 2> /dev/null")
+browserUi = CustomTarget:new("ui", function()
+    os.execute("ln -sd "..browserUi:sourceDir().."images "..browserUi:buildDir().." 2> /dev/null")
 end)
-bossa:addDependency(bossaUi)
-bossa:addCustomFlags("-std=c++11 -D'UI_SEARCH_PATH=\""..bossa:sourceDir().."ui\"'")
-bossa:install("bin")
+browser:addDependency(browserUi)
+browser:addCustomFlags("-std=c++11 -D'UI_SEARCH_PATH=\""..browser:sourceDir().."ui\"'")
+browser:install("bin")
 
 addSubdirectory("UiBundle")
 -- meique doesn't support targetless installs yet.

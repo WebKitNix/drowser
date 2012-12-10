@@ -18,7 +18,7 @@
     border-width:10px 23px 4px 12px;
     border-image: url(./images/tab_inactive.png) 10 23 4 12 fill;
     line-height: 16px;
-    font-size: 16px;
+    font-size: 14px;
     float: left;
     margin-right: -18px;
     z-index: 0;
@@ -65,6 +65,8 @@
 #urlBar {
     user-select: none;
     height: 20px;
+    line-height: 20px;
+    font-size: 16px;
     background-color: transparent;
     border-image: url(./images/urlbar_input.png) 8 4 8 4 fill;
     border-width: 8px 4px 8px 4px;

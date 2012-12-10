@@ -28,6 +28,7 @@ Bossa::Bossa()
     : m_displayUpdateScheduled(false)
     , m_window(DesktopWindow::create(this, 1024, 600))
     , m_glue(0)
+    , m_uiFocused(true)
 {
     m_mainLoop = g_main_loop_new(0, false);
 
@@ -124,15 +125,15 @@ void Bossa::onKeyPress(Nix::KeyEvent* event)
     if (!m_uiView)
         return;
 
-    m_uiView->sendEvent(*event);
+    if (m_uiFocused)
+        m_uiView->sendEvent(*event);
+    else if (!m_tabs.empty())
+        currentTab()->sendEvent(*event);
 }
 
 void Bossa::onKeyRelease(Nix::KeyEvent* event)
 {
-    if (!m_uiView)
-        return;
-
-    m_uiView->sendEvent(*event);
+    onKeyPress(event);
 }
 
 void Bossa::onMouseWheel(Nix::WheelEvent* event)
@@ -149,6 +150,7 @@ void Bossa::onMousePress(Nix::MouseEvent* event)
         Nix::MouseEvent releaseEvent;
         std::memcpy(&releaseEvent, event, sizeof(Nix::MouseEvent));
         releaseEvent.type = Nix::InputEvent::MouseUp;
+        m_uiFocused = true;
 
         m_uiView->sendEvent(*event);
         m_uiView->sendEvent(releaseEvent);
@@ -262,6 +264,7 @@ void Bossa::setCurrentTab(int tabId)
 
 void Bossa::loadUrl(std::string url)
 {
+    m_uiFocused = false;
     printf("Load URL: %s\n", url.c_str());
     WKPageLoadURL(currentTab()->pageRef(), WKURLCreateWithUTF8CString(url.c_str()));
 }

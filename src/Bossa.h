@@ -58,6 +58,8 @@ private:
     WKContextRef m_uiContext;
     WKPageGroupRef m_uiPageGroup;
 
+    bool m_uiFocused;
+
     std::map<int, Nix::WebView*> m_tabs;
     int m_currentTab;
     cairo_matrix_t m_webTransform;

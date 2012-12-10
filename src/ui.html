@@ -4,25 +4,22 @@
 <link rel="stylesheet" type="text/css" href="style.css" />
 <script type="text/javascript" src="jquery-1.8.3.min.js"></script>
 <script type="text/javascript">
+
+activeTab = null;
+nextId = 0;
+
 $(document).ready(function() {
 
     var urlBar = $("#urlBar");
-    urlBar.focusout(function() {
-        $("#urlBar").attr("contentEditable", "false");
-        $("#urlBar").css("text-overflow", "ellipsis");
-    });
-
     urlBar.keypress(function(e) {
+        return e.which != 13;
+    });
+    urlBar.keyup(function(e) {
         if (e.which == 13) {
-            loadUrl();
+            window.loadUrl();
             return false;
         }
         return true;
-    });
-
-    urlBar.click(function() {
-        $("#urlBar").attr("contentEditable", "true");
-        $("#urlBar").css("text-overflow", "clip");
     });
 
     $("#plus").click(addEmptyTab);
@@ -38,9 +35,6 @@ $(document).ready(function() {
 
     addEmptyTab();
 });
-
-activeTab = null;
-nextId = 0;
 
 function addEmptyTab()
 {
@@ -104,7 +98,7 @@ function goForward()
         <div id="btnBack" onclick="goBack();"></div>
         <div id="btnForward" onclick="goForward();"></div>
         <div id="btnRefresh" onClick=""></div>
-        <div id="urlBar"></div>
+        <div id="urlBar" contentEditable></div>
     </div>
 </body>
 </html>

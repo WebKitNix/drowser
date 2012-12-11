@@ -16,6 +16,7 @@ browser:addFiles([[
   Browser.cpp
   DesktopWindow.cpp
   InjectedBundleGlue.cpp
+  Tab.cpp
 ]])
 
 UNIX:browser:addFiles([[

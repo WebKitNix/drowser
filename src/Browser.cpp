@@ -21,8 +21,8 @@
 #include <string>
 
 #include "InjectedBundleGlue.h"
-
-static const int UI_HEIGHT = 65;
+#include "UiConstants.h"
+#include "Tab.h"
 
 Browser::Browser()
     : m_displayUpdateScheduled(false)
@@ -80,8 +80,8 @@ void Browser::initUi()
     m_glue = new InjectedBundleGlue(m_uiContext);
     m_glue->bind("_addTab", this, &Browser::addTab);
     m_glue->bind("_setCurrentTab", this, &Browser::setCurrentTab);
-    m_glue->bind("_loadUrl", this, &Browser::loadUrl);
-    m_glue->bind("_back", this, &Browser::back);
+    m_glue->bindToDispatcher("_loadUrl", this, &Tab::loadUrl);
+    m_glue->bindToDispatcher("_back", this, &Tab::back);
 
     // FIXME: This should probably be a list of location to search for the Ui files.
     WKPageLoadURL(m_uiView->pageRef(), WKURLCreateWithUTF8CString("file://" UI_SEARCH_PATH "/ui.html"));
@@ -99,10 +99,24 @@ int Browser::run()
     return 0;
 }
 
+template<typename Param, typename Obj>
+void Browser::dispatchMessage(const Param& param, void (Obj::*method)(const Param&))
+{
+    assert(currentTab());
+    (currentTab()->*method)(param);
+}
+
+template<typename Obj>
+void Browser::dispatchMessage(void (Obj::*method)())
+{
+    assert(currentTab());
+    (currentTab()->*method)();
+}
+
 template<typename T>
 void Browser::sendEvent(T event)
 {
-    currentTab()->sendEvent(*event);
+    currentTab()->webView()->sendEvent(*event);
 }
 
 template<typename T>
@@ -129,7 +143,7 @@ void Browser::onKeyPress(Nix::KeyEvent* event)
     if (m_uiFocused)
         m_uiView->sendEvent(*event);
     else if (!m_tabs.empty())
-        currentTab()->sendEvent(*event);
+        currentTab()->webView()->sendEvent(*event);
 }
 
 void Browser::onKeyRelease(Nix::KeyEvent* event)
@@ -180,7 +194,7 @@ void Browser::onWindowSizeChange(WKSize size)
     m_uiView->setSize(size);
     if (m_tabs.size()) {
         size.height -= UI_HEIGHT;
-        currentTab()->setSize(size);
+        currentTab()->webView()->setSize(size);
     }
     scheduleUpdateDisplay();
 }
@@ -231,12 +245,12 @@ void Browser::updateDisplay()
     m_uiView->paintToCurrentGLContext();
 
     if (m_tabs.size())
-        currentTab()->paintToCurrentGLContext();
+        currentTab()->webView()->paintToCurrentGLContext();
 
     m_window->swapBuffers();
 }
 
-Nix::WebView* Browser::currentTab()
+Tab* Browser::currentTab()
 {
     return m_tabs[m_currentTab];
 }
@@ -254,7 +268,7 @@ void Browser::addTab(int tabId)
     wndSize.height -= UI_HEIGHT;
     view->setSize(wndSize);
 
-    m_tabs[tabId] = view;
+    m_tabs[tabId] = new Tab(view);
     m_currentTab = tabId;
 }
 
@@ -263,26 +277,5 @@ void Browser::setCurrentTab(int tabId)
     if (!m_tabs.count(tabId))
         return;
     m_currentTab = tabId;
-    currentTab()->setSize(m_window->size());
-}
-
-void Browser::loadUrl(std::string url)
-{
-    m_uiFocused = false;
-    printf("Load URL: %s\n", url.c_str());
-    WKPageLoadURL(currentTab()->pageRef(), WKURLCreateWithUTF8CString(url.c_str()));
-}
-
-void Browser::back()
-{
-    WKPageRef page = currentTab()->pageRef();
-    if (WKPageCanGoBack(page))
-        WKPageGoBack(page);
-}
-
-void Browser::forward()
-{
-    WKPageRef page = currentTab()->pageRef();
-    if (WKPageCanGoForward(page))
-        WKPageGoForward(page);
+    currentTab()->webView()->setSize(m_window->size());
 }

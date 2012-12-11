@@ -12,6 +12,8 @@ namespace Nix {
 class WebView;
 }
 
+class Tab;
+
 extern "C" {
 gboolean callUpdateDisplay(gpointer);
 }
@@ -43,10 +45,12 @@ public:
 
     void addTab(int tabId);
     void setCurrentTab(int tabId);
-    void loadUrl(std::string);
-    void back();
-    void forward();
-    Nix::WebView* currentTab();
+    Tab* currentTab();
+
+    template<typename Param, typename Obj>
+    void dispatchMessage(const Param& param, void (Obj::*method)(const Param&));
+    template<typename Obj>
+    void dispatchMessage(void (Obj::*method)());
 
 private:
     GMainLoop* m_mainLoop;
@@ -60,7 +64,7 @@ private:
 
     bool m_uiFocused;
 
-    std::map<int, Nix::WebView*> m_tabs;
+    std::map<int, Tab*> m_tabs;
     int m_currentTab;
     cairo_matrix_t m_webTransform;
     WKPageGroupRef m_webPageGroup;

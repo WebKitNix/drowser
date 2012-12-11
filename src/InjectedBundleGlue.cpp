@@ -51,9 +51,3 @@ void InjectedBundleGlue::call(const std::string& messageName, WKTypeRef param) c
         std::cerr << "Unknown message from injected bundle: " << messageName << std::endl;
     }
 }
-
-void InjectedBundleGlue::setBind(const char* messageName, std::function<void(WKTypeRef)> callback)
-{
-    m_bindMap[messageName] = callback;
-}
-

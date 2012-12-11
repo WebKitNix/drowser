@@ -17,26 +17,39 @@ public:
     template<typename Obj, typename Param>
     void bind(const char* messageName, Obj* obj, void (Obj::*method)(Param))
     {
-        setBind(messageName, [obj,method](WKTypeRef msgBody) {
+        m_bindMap[messageName] = [obj,method](WKTypeRef msgBody) {
             (obj->*method)(convertWKType<Param>(msgBody));
-        });
+        };
     }
 
     template<typename Obj>
     void bind(const char* messageName, Obj* obj, void (Obj::*method)())
     {
-        setBind(messageName, [obj,method](WKTypeRef msgBody) {
+        m_bindMap[messageName] = [obj,method](WKTypeRef msgBody) {
             (obj->*method)();
-        });
+        };
+    }
+
+    template<typename Obj, typename ObjReceiver, typename Param>
+    void bindToDispatcher(const char* messageName, Obj* obj, void (ObjReceiver::*method)(const Param&))
+    {
+        m_bindMap[messageName] = [obj,method](WKTypeRef msgBody) {
+            (obj->dispatchMessage)(convertWKType<Param>(msgBody), method);
+        };
+    }
+
+    template<typename Obj, typename ObjReceiver>
+    void bindToDispatcher(const char* messageName, Obj* obj, void (ObjReceiver::*method)())
+    {
+        m_bindMap[messageName] = [obj,method](WKTypeRef msgBody) {
+            (obj->dispatchMessage)(method);
+        };
     }
 
     void call(const std::string& messageName, WKTypeRef param) const;
 
 private:
-
-    void setBind(const char* messageName, std::function<void(WKTypeRef)> callback);
-
-    typedef std::unordered_map<std::string, std::function<void(WKTypeRef)>> BindMap;
+    typedef std::unordered_map<std::string, std::function<void(WKTypeRef)> > BindMap;
     BindMap m_bindMap;
 };
 

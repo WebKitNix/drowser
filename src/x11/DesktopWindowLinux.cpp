@@ -38,7 +38,7 @@ private:
     double m_lastClickTime;
     int m_lastClickX;
     int m_lastClickY;
-    Nix::MouseEvent::Button m_lastClickButton;
+    WKEventMouseButton m_lastClickButton;
     int m_clickCount;
 };
 
@@ -54,7 +54,7 @@ DesktopWindowLinux::DesktopWindowLinux(DesktopWindowClient* client, int width, i
     , m_lastClickTime(0)
     , m_lastClickX(0)
     , m_lastClickY(0)
-    , m_lastClickButton(Nix::MouseEvent::NoButton)
+    , m_lastClickButton(kWKEventMouseButtonNoButton)
     , m_clickCount(0)
 {
     if (!m_display)
@@ -173,10 +173,10 @@ static KeySym chooseSymbolForXKeyEvent(const XKeyEvent* event, bool* useUpperCas
     return upperCaseSymbol;
 }
 
-static Nix::KeyEvent convertXKeyEventToNixKeyEvent(const XKeyEvent* event, const KeySym& symbol, bool useUpperCase)
+static NIXKeyEvent convertXKeyEventToNixKeyEvent(const XKeyEvent* event, const KeySym& symbol, bool useUpperCase)
 {
-    Nix::KeyEvent ev;
-    ev.type = (event->type == KeyPress) ? Nix::InputEvent::KeyDown : Nix::InputEvent::KeyUp;
+    NIXKeyEvent ev;
+    ev.type = (event->type == KeyPress) ? kNIXInputEventTypeKeyDown : kNIXInputEventTypeKeyUp;
     ev.modifiers = convertXEventModifiersToNativeModifiers(event->state);
     ev.timestamp = convertXEventTimeToNixTimestamp(event->time);
     ev.shouldUseUpperCase = useUpperCase;
@@ -185,7 +185,7 @@ static Nix::KeyEvent convertXKeyEventToNixKeyEvent(const XKeyEvent* event, const
     return ev;
 }
 
-static void XEventToNix(const XEvent& event, Nix::KeyEvent* nixEvent)
+static void XEventToNix(const XEvent& event, NIXKeyEvent* nixEvent)
 {
     bool shouldUseUpperCase;
     const XKeyEvent* keyEvent = reinterpret_cast<const XKeyEvent*>(&event);
@@ -208,13 +208,13 @@ void DesktopWindowLinux::handleXEvent(const XEvent& event)
         m_client->onWindowExpose();
         break;
     case KeyPress: {
-        Nix::KeyEvent ev;
+        NIXKeyEvent ev;
         XEventToNix(event, &ev);
         m_client->onKeyPress(&ev);
         break;
     }
     case KeyRelease: {
-        Nix::KeyEvent ev;
+        NIXKeyEvent ev;
         XEventToNix(event, &ev);
         m_client->onKeyRelease(&ev);
         break;
@@ -226,8 +226,8 @@ void DesktopWindowLinux::handleXEvent(const XEvent& event)
             // Same constant we use inside WebView to calculate the ticks. See also WebCore::Scrollbar::pixelsPerLineStep().
             const float pixelsPerStep = 40.0f;
 
-            Nix::WheelEvent ev;
-            ev.type = Nix::InputEvent::Wheel;
+            NIXWheelEvent ev;
+            ev.type = kNIXInputEventTypeWheel;
             ev.modifiers = convertXEventModifiersToNativeModifiers(xEvent->state);
             ev.timestamp = convertXEventTimeToNixTimestamp(xEvent->time);
             ev.x = xEvent->x;
@@ -235,14 +235,14 @@ void DesktopWindowLinux::handleXEvent(const XEvent& event)
             ev.globalX = xEvent->x_root;
             ev.globalY = xEvent->y_root;
             ev.delta = pixelsPerStep * (xEvent->button == 4 ? 1 : -1);
-            ev.orientation = xEvent->state & Mod1Mask ? Nix::WheelEvent::Horizontal : Nix::WheelEvent::Vertical;
+            ev.orientation = xEvent->state & Mod1Mask ? kNIXWheelEventOrientationHorizontal : kNIXWheelEventOrientationVertical;
             m_client->onMouseWheel(&ev);
             break;
         }
         updateClickCount(xEvent);
 
-        Nix::MouseEvent ev;
-        ev.type = Nix::InputEvent::MouseDown;
+        NIXMouseEvent ev;
+        ev.type = kNIXInputEventTypeMouseDown;
         ev.button = convertXEventButtonToNativeMouseButton(xEvent->button);
         ev.x = xEvent->x;
         ev.y = xEvent->y;
@@ -259,8 +259,8 @@ void DesktopWindowLinux::handleXEvent(const XEvent& event)
         if (xEvent->button == 4 || xEvent->button == 5)
             break;
 
-        Nix::MouseEvent ev;
-        ev.type = Nix::InputEvent::MouseUp;
+        NIXMouseEvent ev;
+        ev.type = kNIXInputEventTypeMouseUp;
         ev.button = convertXEventButtonToNativeMouseButton(xEvent->button);
         ev.x = xEvent->x;
         ev.y = xEvent->y;
@@ -278,10 +278,10 @@ void DesktopWindowLinux::handleXEvent(const XEvent& event)
             m_client->onWindowClose();
         break;
     case MotionNotify: {
-        Nix::MouseEvent ev;
+        NIXMouseEvent ev;
         const XPointerMovedEvent* xEvent = reinterpret_cast<const XPointerMovedEvent*>(&event);
-        ev.type = Nix::InputEvent::MouseMove;
-        ev.button = Nix::MouseEvent::NoButton;
+        ev.type = kNIXInputEventTypeMouseMove;
+        ev.button = kWKEventMouseButtonNoButton;
         ev.x = xEvent->x;
         ev.y = xEvent->y;
         ev.globalX = xEvent->x_root;

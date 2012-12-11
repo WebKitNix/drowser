@@ -3,14 +3,9 @@
 
 #include "DesktopWindow.h"
 #include <glib.h>
-#include <WebView.h>
-#include <WebKit2/WKContext.h>
+#include <NIXView.h>
 #include <map>
 #include <string>
-
-namespace Nix {
-class WebView;
-}
 
 class Tab;
 
@@ -20,7 +15,7 @@ gboolean callUpdateDisplay(gpointer);
 
 class InjectedBundleGlue;
 
-class Browser : public DesktopWindowClient, public Nix::WebViewClient
+class Browser : public DesktopWindowClient
 {
 public:
     Browser();
@@ -30,21 +25,18 @@ public:
 
     // DesktopWindowClient
     virtual void onWindowExpose();
-    virtual void onKeyPress(Nix::KeyEvent*);
-    virtual void onKeyRelease(Nix::KeyEvent*);
-    virtual void onMousePress(Nix::MouseEvent*);
-    virtual void onMouseRelease(Nix::MouseEvent*);
-    virtual void onMouseMove(Nix::MouseEvent*);
-    virtual void onMouseWheel(Nix::WheelEvent*);
+    virtual void onKeyPress(NIXKeyEvent*);
+    virtual void onKeyRelease(NIXKeyEvent*);
+    virtual void onMousePress(NIXMouseEvent*);
+    virtual void onMouseRelease(NIXMouseEvent*);
+    virtual void onMouseMove(NIXMouseEvent*);
+    virtual void onMouseWheel(NIXWheelEvent*);
     virtual void onWindowSizeChange(WKSize);
     virtual void onWindowClose();
 
-    // WebViewClient
-    virtual void viewNeedsDisplay(WKRect);
-    virtual void webProcessCrashed(WKStringRef url);
-
-    void addTab(int tabId);
-    void setCurrentTab(int tabId);
+    void addTab(const int& tabId);
+    void setCurrentTab(const int& tabId);
+    void loadUrlOnCurrentTab(const std::string& url);
     Tab* currentTab();
 
     template<typename Param, typename Obj>
@@ -52,13 +44,15 @@ public:
     template<typename Obj>
     void dispatchMessage(void (Obj::*method)());
 
+    void scheduleUpdateDisplay();
+
 private:
     GMainLoop* m_mainLoop;
     bool m_displayUpdateScheduled;
     DesktopWindow* m_window;
     InjectedBundleGlue* m_glue;
 
-    Nix::WebView* m_uiView;
+    NIXView m_uiView;
     WKContextRef m_uiContext;
     WKPageGroupRef m_uiPageGroup;
 
@@ -66,16 +60,13 @@ private:
 
     std::map<int, Tab*> m_tabs;
     int m_currentTab;
-    cairo_matrix_t m_webTransform;
+    NIXMatrix m_webTransform;
     WKPageGroupRef m_webPageGroup;
     WKContextRef m_webContext;
 
     template<typename T>
-    bool sendEventToPage(T event);
-    template<typename T>
-    void sendEvent(T event);
+    bool sendMouseEventToPage(T event);
 
-    void scheduleUpdateDisplay();
     void updateDisplay();
     void initUi();
 

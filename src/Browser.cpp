@@ -33,15 +33,18 @@ Browser::Browser()
     m_mainLoop = g_main_loop_new(0, false);
 
     initUi();
-    cairo_matrix_init_translate(&m_webTransform, 0, UI_HEIGHT);
 }
 
 Browser::~Browser()
 {
-     g_main_loop_unref(m_mainLoop);
-     delete m_uiView;
-     delete m_window;
-     delete m_glue;
+    for (std::pair<const int, Tab*> p : m_tabs)
+        delete p.second;
+    m_tabs.clear();
+
+    g_main_loop_unref(m_mainLoop);
+    NIXViewRelease(m_uiView);
+    delete m_window;
+    delete m_glue;
 }
 
 static std::string getApplicationPath()
@@ -70,21 +73,34 @@ void Browser::initUi()
     WKPreferencesRef preferences = WKPageGroupGetPreferences(m_uiPageGroup);
     WKPreferencesSetAcceleratedCompositingEnabled(preferences, true);
 
-    m_uiView = Nix::WebView::create(m_uiContext, m_uiPageGroup, this);
-    m_uiView->initialize();
-    m_uiView->setFocused(true);
-    m_uiView->setVisible(true);
-    m_uiView->setActive(true);
-    m_uiView->setSize(m_window->size());
+    m_uiView = NIXViewCreate(m_uiContext, m_uiPageGroup);
+
+    NIXViewClient client;
+    std::memset(&client, 0, sizeof(NIXViewClient));
+    client.version = kNIXViewClientCurrentVersion;
+    client.clientInfo = this;
+    client.viewNeedsDisplay = [](NIXView, WKRect, const void* client) {
+        ((Browser*)client)->scheduleUpdateDisplay();
+    };
+    client.webProcessCrashed = [](NIXView, const OpaqueWKString*, const void*) {
+        puts("UI Webprocess crashed :-(");
+    };
+
+    NIXViewSetViewClient(m_uiView, &client);
+    NIXViewInitialize(m_uiView);
+    NIXViewSetFocused(m_uiView, true);
+    NIXViewSetVisible(m_uiView, true);
+    NIXViewSetActive(m_uiView, true);
+    NIXViewSetSize(m_uiView, m_window->size());
 
     m_glue = new InjectedBundleGlue(m_uiContext);
     m_glue->bind("_addTab", this, &Browser::addTab);
     m_glue->bind("_setCurrentTab", this, &Browser::setCurrentTab);
-    m_glue->bindToDispatcher("_loadUrl", this, &Tab::loadUrl);
+    m_glue->bind("_loadUrl", this, &Browser::loadUrlOnCurrentTab);
     m_glue->bindToDispatcher("_back", this, &Tab::back);
 
     // FIXME: This should probably be a list of location to search for the Ui files.
-    WKPageLoadURL(m_uiView->pageRef(), WKURLCreateWithUTF8CString("file://" UI_SEARCH_PATH "/ui.html"));
+    WKPageLoadURL(NIXViewGetPage(m_uiView), WKURLCreateWithUTF8CString("file://" UI_SEARCH_PATH "/ui.html"));
 
     // context used on all webpages.
     m_webContext = WKContextCreate();
@@ -114,17 +130,11 @@ void Browser::dispatchMessage(void (Obj::*method)())
 }
 
 template<typename T>
-void Browser::sendEvent(T event)
-{
-    currentTab()->webView()->sendEvent(*event);
-}
-
-template<typename T>
-bool Browser::sendEventToPage(T event)
+bool Browser::sendMouseEventToPage(T event)
 {
     if (event->y > UI_HEIGHT && !m_tabs.empty()) {
         event->y -= UI_HEIGHT;
-        sendEvent(event);
+        currentTab()->sendMouseEvent(event);
         return true;
     }
     return false;
@@ -135,55 +145,55 @@ void Browser::onWindowExpose()
     scheduleUpdateDisplay();
 }
 
-void Browser::onKeyPress(Nix::KeyEvent* event)
+void Browser::onKeyPress(NIXKeyEvent* event)
 {
     if (!m_uiView)
         return;
 
     if (m_uiFocused)
-        m_uiView->sendEvent(*event);
+        NIXViewSendKeyEvent(m_uiView, event);
     else if (!m_tabs.empty())
-        currentTab()->webView()->sendEvent(*event);
+        currentTab()->sendKeyEvent(event);
 }
 
-void Browser::onKeyRelease(Nix::KeyEvent* event)
+void Browser::onKeyRelease(NIXKeyEvent* event)
 {
     onKeyPress(event);
 }
 
-void Browser::onMouseWheel(Nix::WheelEvent* event)
+void Browser::onMouseWheel(NIXWheelEvent* event)
 {
-    sendEventToPage(event);
+    sendMouseEventToPage(event);
 }
 
-void Browser::onMousePress(Nix::MouseEvent* event)
+void Browser::onMousePress(NIXMouseEvent* event)
 {
     if (!m_uiView)
         return;
 
-    if (!sendEventToPage(event)) {
-        Nix::MouseEvent releaseEvent;
-        std::memcpy(&releaseEvent, event, sizeof(Nix::MouseEvent));
-        releaseEvent.type = Nix::InputEvent::MouseUp;
+    if (!sendMouseEventToPage(event)) {
+        NIXMouseEvent releaseEvent;
+        std::memcpy(&releaseEvent, event, sizeof(NIXMouseEvent));
+        releaseEvent.type = kNIXInputEventTypeMouseUp;
         m_uiFocused = true;
 
-        m_uiView->sendEvent(*event);
-        m_uiView->sendEvent(releaseEvent);
+        NIXViewSendMouseEvent(m_uiView, event);
+        NIXViewSendMouseEvent(m_uiView, &releaseEvent);
     }
 }
 
-void Browser::onMouseRelease(Nix::MouseEvent* event)
+void Browser::onMouseRelease(NIXMouseEvent* event)
 {
-    sendEventToPage(event);
+    sendMouseEventToPage(event);
 }
 
-void Browser::onMouseMove(Nix::MouseEvent* event)
+void Browser::onMouseMove(NIXMouseEvent* event)
 {
     if (!m_uiView)
         return;
 
-    if (!sendEventToPage(event))
-        m_uiView->sendEvent(*event);
+    if (!sendMouseEventToPage(event))
+        NIXViewSendMouseEvent(m_uiView, event);
 }
 
 void Browser::onWindowSizeChange(WKSize size)
@@ -191,10 +201,10 @@ void Browser::onWindowSizeChange(WKSize size)
     if (!m_uiView)
         return;
 
-    m_uiView->setSize(size);
+    NIXViewSetSize(m_uiView, size);
     if (m_tabs.size()) {
         size.height -= UI_HEIGHT;
-        currentTab()->webView()->setSize(size);
+        NIXViewSetSize(currentTab()->webView(), size);
     }
     scheduleUpdateDisplay();
 }
@@ -202,16 +212,6 @@ void Browser::onWindowSizeChange(WKSize size)
 void Browser::onWindowClose()
 {
     g_main_loop_quit(m_mainLoop);
-}
-
-void Browser::viewNeedsDisplay(WKRect)
-{
-    scheduleUpdateDisplay();
-}
-
-void Browser::webProcessCrashed(WKStringRef url)
-{
-    puts("UI Webprocess crashed :-(");
 }
 
 gboolean callUpdateDisplay(gpointer data)
@@ -238,14 +238,14 @@ void Browser::updateDisplay()
     m_window->makeCurrent();
 
     WKSize size = m_window->size();
-    glViewport(0, 0, m_window->size().width, m_window->size().height);
+    glViewport(0, 0, size.width, size.height);
     glClearColor(1.0, 1.0, 1.0, 1.0);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    m_uiView->paintToCurrentGLContext();
+    NIXViewPaintToCurrentGLContext(m_uiView);
 
     if (m_tabs.size())
-        currentTab()->webView()->paintToCurrentGLContext();
+        NIXViewPaintToCurrentGLContext(currentTab()->webView());
 
     m_window->swapBuffers();
 }
@@ -255,27 +255,30 @@ Tab* Browser::currentTab()
     return m_tabs[m_currentTab];
 }
 
-void Browser::addTab(int tabId)
+void Browser::addTab(const int& tabId)
 {
     assert(m_tabs.count(tabId) == 0);
-    Nix::WebView* view = Nix::WebView::create(m_webContext, m_webPageGroup, this);
-    view->initialize();
-    view->setFocused(true);
-    view->setVisible(true);
-    view->setActive(true);
-    view->setUserViewportTransformation(m_webTransform);
+
+    Tab* tab = new Tab(this, m_webContext, m_webPageGroup);
+    m_tabs[tabId] = tab;
+
     WKSize wndSize = m_window->size();
     wndSize.height -= UI_HEIGHT;
-    view->setSize(wndSize);
+    tab->setSize(wndSize);
 
-    m_tabs[tabId] = new Tab(view);
     m_currentTab = tabId;
 }
 
-void Browser::setCurrentTab(int tabId)
+void Browser::setCurrentTab(const int& tabId)
 {
     if (!m_tabs.count(tabId))
         return;
     m_currentTab = tabId;
-    currentTab()->webView()->setSize(m_window->size());
+    NIXViewSetSize(currentTab()->webView(), m_window->size());
+}
+
+void Browser::loadUrlOnCurrentTab(const std::string& url)
+{
+    m_uiFocused = false;
+    currentTab()->loadUrl(url);
 }

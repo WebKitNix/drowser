@@ -1,14 +1,12 @@
 glib = findPackage("glib-2.0", REQUIRED)
 openGL = findPackage("gl", REQUIRED)
 x11 = findPackage("x11", REQUIRED)
-cairo = findPackage("cairo", REQUIRED)
 nix = findPackage("WebKitNix", REQUIRED)
 
 browser = Executable:new("browser")
 browser:usePackage(glib)
 browser:usePackage(openGL)
 browser:usePackage(x11)
-browser:usePackage(cairo)
 browser:usePackage(nix)
 
 browser:addFiles([[

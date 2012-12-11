@@ -2,25 +2,31 @@
 #define Tab_h
 
 #include <string>
+#include <functional>
 #include <WebKit2/WKContext.h>
+#include <NIXView.h>
 
-namespace Nix {
-class WebView;
-}
+class Browser;
 
 class Tab {
 public:
-    Tab(Nix::WebView* view);
+    Tab(Browser* browser, WKContextRef context, WKPageGroupRef pageGroup);
     ~Tab();
 
     // temporary method while things is changing
-    Nix::WebView* webView() { return m_view; }
+    NIXView webView() { return m_view; }
+    void setSize(WKSize);
+    void sendKeyEvent(NIXKeyEvent*);
+    template<typename T>
+    void sendMouseEvent(T);
 
     void loadUrl(const std::string& url);
     void back();
     void forward();
+
 private:
-    Nix::WebView* m_view;
+    NIXView m_view;
+    WKPageRef m_page;
 };
 
 #endif

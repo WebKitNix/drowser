@@ -3,69 +3,62 @@
 
 #include "XKeyMappingTable.h"
 #include <NixEvents.h>
-#include <X11/Xutil.h>
 #include <X11/keysym.h>
 #include <ctype.h>
 #include <glib.h>
 
-static Nix::KeyEvent::Key convertXKeySymToNativeKeycode(unsigned int keysym)
+static NIXKeyEventKey convertXKeySymToNativeKeycode(unsigned int keysym)
 {
-    using namespace Nix;
-
     for (int i = 0; XKeySymMappingTable[i]; i += 2) {
         if (XKeySymMappingTable[i] == keysym)
-            return static_cast<KeyEvent::Key>(XKeySymMappingTable[i+1]);
+            return static_cast<NIXKeyEventKey>(XKeySymMappingTable[i+1]);
     }
 
     if (keysym < 256) {
         // upper-case key, if known
         if (isprint((int)keysym))
-            return static_cast<KeyEvent::Key>(toupper((int)keysym));
+            return static_cast<NIXKeyEventKey>(toupper((int)keysym));
     } else if (keysym >= XK_F1 && keysym <= XK_F35) {
         // function keys
-        return static_cast<KeyEvent::Key>(KeyEvent::Key_F1 + ((int)keysym - XK_F1));
+        return static_cast<NIXKeyEventKey>(kNIXKeyEventKey_F1 + ((int)keysym - XK_F1));
     } else if (keysym >= XK_KP_Space && keysym <= XK_KP_9) {
         if (keysym >= XK_KP_0) {
             // numeric keypad keys
-            return static_cast<KeyEvent::Key>(KeyEvent::Key_0 + ((int)keysym - XK_KP_0));
+            return static_cast<NIXKeyEventKey>(kNIXKeyEventKey_0 + ((int)keysym - XK_KP_0));
         }
     }
-    return KeyEvent::Key_unknown;
+    return kNIXKeyEventKey_unknown;
 }
 
-static int convertXEventModifiersToNativeModifiers(int s)
+static uint32_t convertXEventModifiersToNativeModifiers(int s)
 {
-    using namespace Nix;
-
     int ret = 0;
     if (s & ShiftMask)
-        ret |= InputEvent::ShiftKey;
+        ret |= kNIXInputEventModifiersShiftKey;
     if (s & ControlMask)
-        ret |= InputEvent::ControlKey;
+        ret |= kNIXInputEventModifiersControlKey;
     if (s & LockMask)
-        ret |= InputEvent::CapsLockKey;
+        ret |= kNIXInputEventModifiersCapsLockKey;
     if (s & Mod1Mask)
-        ret |= InputEvent::AltKey;
+        ret |= kNIXInputEventModifiersAltKey;
     if (s & Mod2Mask)
-        ret |= InputEvent::NumLockKey;
+        ret |= kNIXInputEventModifiersNumLockKey;
     if (s & Mod4Mask)
-        ret |= InputEvent::MetaKey;
+        ret |= kNIXInputEventModifiersMetaKey;
     return ret;
 }
 
-static Nix::MouseEvent::Button convertXEventButtonToNativeMouseButton(unsigned int mouseButton)
+static WKEventMouseButton convertXEventButtonToNativeMouseButton(unsigned int mouseButton)
 {
-    using namespace Nix;
-
     switch (mouseButton) {
     case Button1:
-        return MouseEvent::LeftButton;
+        return kWKEventMouseButtonLeftButton;
     case Button2:
-        return MouseEvent::MiddleButton;
+        return kWKEventMouseButtonMiddleButton;
     case Button3:
-        return MouseEvent::RightButton;
+        return kWKEventMouseButtonRightButton;
     default:
-        return MouseEvent::NoButton;
+        return kWKEventMouseButtonNoButton;
     }
 }
 

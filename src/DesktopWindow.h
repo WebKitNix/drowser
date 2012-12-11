@@ -8,12 +8,12 @@ class DesktopWindowClient
 {
 public:
     virtual void onWindowExpose() = 0;
-    virtual void onKeyPress(Nix::KeyEvent*) = 0;
-    virtual void onKeyRelease(Nix::KeyEvent*) = 0;
-    virtual void onMousePress(Nix::MouseEvent*) = 0;
-    virtual void onMouseRelease(Nix::MouseEvent*) = 0;
-    virtual void onMouseMove(Nix::MouseEvent*) = 0;
-    virtual void onMouseWheel(Nix::WheelEvent*) = 0;
+    virtual void onKeyPress(NIXKeyEvent*) = 0;
+    virtual void onKeyRelease(NIXKeyEvent*) = 0;
+    virtual void onMousePress(NIXMouseEvent*) = 0;
+    virtual void onMouseRelease(NIXMouseEvent*) = 0;
+    virtual void onMouseMove(NIXMouseEvent*) = 0;
+    virtual void onMouseWheel(NIXWheelEvent*) = 0;
 
     virtual void onWindowSizeChange(WKSize) = 0;
     virtual void onWindowClose() = 0;

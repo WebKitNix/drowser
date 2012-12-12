@@ -5,9 +5,7 @@
 #include <unordered_map>
 #include <string>
 #include <WebKit2/WKContext.h>
-
-template<typename T>
-T convertWKType(WKTypeRef);
+#include "WKConversions.h"
 
 class InjectedBundleGlue
 {
@@ -18,7 +16,7 @@ public:
     void bind(const char* messageName, Obj* obj, void (Obj::*method)(const Param&))
     {
         m_bindMap[messageName] = [obj,method](WKTypeRef msgBody) {
-            (obj->*method)(convertWKType<Param>(msgBody));
+            (obj->*method)(fromWK<Param>(msgBody));
         };
     }
 
@@ -34,7 +32,7 @@ public:
     void bindToDispatcher(const char* messageName, Obj* obj, void (ObjReceiver::*method)(const Param&))
     {
         m_bindMap[messageName] = [obj,method](WKTypeRef msgBody) {
-            (obj->dispatchMessage)(convertWKType<Param>(msgBody), method);
+            (obj->dispatchMessage)(fromWK<Param>(msgBody), method);
         };
     }
 

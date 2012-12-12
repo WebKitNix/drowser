@@ -15,6 +15,7 @@ browser:addFiles([[
   DesktopWindow.cpp
   InjectedBundleGlue.cpp
   Tab.cpp
+  WKConversions.cpp
 ]])
 
 UNIX:browser:addFiles([[
@@ -29,7 +30,7 @@ browserUi = CustomTarget:new("ui", function()
     os.execute("ln -sd "..browserUi:sourceDir().."images "..browserUi:buildDir().." 2> /dev/null")
 end)
 browser:addDependency(browserUi)
-browser:addCustomFlags("-std=c++11 -D'UI_SEARCH_PATH=\""..browser:sourceDir().."ui\"'")
+browser:addCustomFlags("-Wall -std=c++11 -D'UI_SEARCH_PATH=\""..browser:sourceDir().."ui\"'")
 browser:install("bin")
 
 addSubdirectory("UiBundle")

@@ -274,7 +274,7 @@ void DesktopWindowLinux::handleXEvent(const XEvent& event)
         break;
     }
     case ClientMessage:
-        if (event.xclient.data.l[0] == wmDeleteMessageAtom)
+        if ((Atom)event.xclient.data.l[0] == wmDeleteMessageAtom)
             m_client->onWindowClose();
         break;
     case MotionNotify: {
@@ -299,7 +299,7 @@ void DesktopWindowLinux::updateClickCount(const XButtonPressedEvent* event)
 {
     if (m_lastClickX != event->x
         || m_lastClickY != event->y
-        || m_lastClickButton != event->button
+        || m_lastClickButton != convertXEventButtonToNativeMouseButton(event->button)
         || event->time - m_lastClickTime >= DOUBLE_CLICK_INTERVAL)
         m_clickCount = 1;
     else

@@ -1,9 +1,25 @@
 #include "Tab.h"
 #include <iostream>
 #include <cstring>
+#include <WebKit2/WKNumber.h>
+#include <WebKit2/WKPage.h>
+#include <WebKit2/WKString.h>
 #include <WebKit2/WKURL.h>
 #include "UiConstants.h"
+#include "WKConversions.h"
 #include "Browser.h"
+
+template<typename T>
+static void postToBundle(WKPageRef page, const char* message, const T& value)
+{
+    WKPagePostMessageToInjectedBundle(page, WKStringCreateWithUTF8CString(message), toWK(value));
+}
+
+static void didChangeProgressCallBack(WKPageRef page, const void*)
+{
+    printf("loading... %.2lf\n", WKPageGetEstimatedProgress(page));
+    postToBundle(page, "updateProgress", WKPageGetEstimatedProgress(page));
+}
 
 Tab::Tab(Browser* browser, WKContextRef context, WKPageGroupRef pageGroup)
 {
@@ -27,6 +43,15 @@ Tab::Tab(Browser* browser, WKContextRef context, WKPageGroupRef pageGroup)
     };
 
     NIXViewSetViewClient(m_view, &client);
+
+    WKPageLoaderClient loaderClient;
+    memset(&loaderClient, 0, sizeof(WKPageLoaderClient));
+    loaderClient.version = kWKPageLoaderClientCurrentVersion;
+
+    loaderClient.didChangeProgress = didChangeProgressCallBack;
+
+    WKPageSetPageLoaderClient(m_page, &loaderClient);
+
 }
 
 Tab::~Tab()

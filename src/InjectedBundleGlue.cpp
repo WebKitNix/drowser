@@ -5,30 +5,12 @@
 #include <WebKit2/WKNumber.h>
 #include <WebKit2/WKString.h>
 
-template<>
-int convertWKType<int>(WKTypeRef value)
-{
-    return WKUInt64GetValue((WKUInt64Ref)value);
-}
-
-template<>
-std::string convertWKType(WKTypeRef value)
-{
-    WKStringRef wkStr = reinterpret_cast<WKStringRef>(value);
-    size_t wkStrSize = WKStringGetMaximumUTF8CStringSize(wkStr);
-    char* buffer = new char[wkStrSize + 1];
-    WKStringGetUTF8CString(wkStr, buffer, wkStrSize);
-    std::string result(buffer);
-    delete[] buffer;
-    return result;
-}
-
 extern "C" {
 static void didReceiveMessageFromInjectedBundle(WKContextRef page, WKStringRef messageName, WKTypeRef messageBody, const void *clientInfo)
 {
     InjectedBundleGlue* self = reinterpret_cast<InjectedBundleGlue*>(const_cast<void*>(clientInfo));
 
-    std::string name = convertWKType<std::string>(messageName);
+    std::string name = fromWK<std::string>(messageName);
     self->call(name, messageBody);
 }
 }

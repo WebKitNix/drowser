@@ -2,7 +2,7 @@
 #define DesktopWindow_h
 
 #include <WebKit2/WKGeometry.h>
-#include <NixEvents.h>
+#include <NIXEvents.h>
 
 class DesktopWindowClient
 {

@@ -2,7 +2,7 @@
 #define XlibEventUtils_h
 
 #include "XKeyMappingTable.h"
-#include <NixEvents.h>
+#include <NIXEvents.h>
 #include <X11/keysym.h>
 #include <ctype.h>
 #include <glib.h>

@@ -42,7 +42,7 @@
 #ifndef XKeyMappingTable_h
 #define XKeyMappingTable_h
 
-#include "NixEvents.h"
+#include "NIXEvents.h"
 #include <X11/keysym.h>
 
 static const unsigned XKeySymMappingTable[] = {

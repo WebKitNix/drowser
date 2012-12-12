@@ -12,13 +12,15 @@
 template<typename T>
 static void postToBundle(WKPageRef page, const char* message, const T& value)
 {
-    WKPagePostMessageToInjectedBundle(page, WKStringCreateWithUTF8CString(message), toWK(value));
+    WKStringRef wkMessage = WKStringCreateWithUTF8CString(message);
+    WKPagePostMessageToInjectedBundle(page, wkMessage, toWK(value));
+    WKRelease(wkMessage);
 }
 
 static void didChangeProgressCallBack(WKPageRef page, const void*)
 {
     printf("loading... %.2lf\n", WKPageGetEstimatedProgress(page));
-    postToBundle(page, "updateProgress", WKPageGetEstimatedProgress(page));
+    postToBundle(page, "setProgressBar", WKPageGetEstimatedProgress(page));
 }
 
 Tab::Tab(Browser* browser, WKContextRef context, WKPageGroupRef pageGroup)
@@ -47,11 +49,9 @@ Tab::Tab(Browser* browser, WKContextRef context, WKPageGroupRef pageGroup)
     WKPageLoaderClient loaderClient;
     memset(&loaderClient, 0, sizeof(WKPageLoaderClient));
     loaderClient.version = kWKPageLoaderClientCurrentVersion;
-
     loaderClient.didChangeProgress = didChangeProgressCallBack;
 
     WKPageSetPageLoaderClient(m_page, &loaderClient);
-
 }
 
 Tab::~Tab()
@@ -84,7 +84,9 @@ void Tab::sendMouseEvent<NIXMouseEvent*>(NIXMouseEvent* event)
 void Tab::loadUrl(const std::string& url)
 {
     printf("Load URL: %s\n", url.c_str());
-    WKPageLoadURL(m_page, WKURLCreateWithUTF8CString(url.c_str()));
+    WKURLRef wkUrl = WKURLCreateWithUTF8CString(url.c_str());
+    WKPageLoadURL(m_page, wkUrl);
+    WKRelease(wkUrl);
 }
 
 void Tab::back()

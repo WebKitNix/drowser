@@ -67,8 +67,12 @@ static std::string getApplicationPath()
 void Browser::initUi()
 {
     const std::string appPath = getApplicationPath();
-    m_uiContext = WKContextCreateWithInjectedBundlePath(WKStringCreateWithUTF8CString((appPath + "/UiBundle/libUiBundle.so").c_str()));
-    m_uiPageGroup = WKPageGroupCreateWithIdentifier(WKStringCreateWithUTF8CString("Browser"));
+    WKStringRef wkStr = WKStringCreateWithUTF8CString((appPath + "/UiBundle/libUiBundle.so").c_str());
+    m_uiContext = WKContextCreateWithInjectedBundlePath(wkStr);
+    WKRelease(wkStr);
+    wkStr = WKStringCreateWithUTF8CString("Browser");
+    m_uiPageGroup = WKPageGroupCreateWithIdentifier(wkStr);
+    WKRelease(wkStr);
 
     WKPreferencesRef preferences = WKPageGroupGetPreferences(m_uiPageGroup);
     WKPreferencesSetAcceleratedCompositingEnabled(preferences, true);
@@ -100,11 +104,15 @@ void Browser::initUi()
     m_glue->bindToDispatcher("_back", this, &Tab::back);
 
     // FIXME: This should probably be a list of location to search for the Ui files.
-    WKPageLoadURL(NIXViewGetPage(m_uiView), WKURLCreateWithUTF8CString("file://" UI_SEARCH_PATH "/ui.html"));
+    WKURLRef wkUrl = WKURLCreateWithUTF8CString("file://" UI_SEARCH_PATH "/ui.html");
+    WKPageLoadURL(NIXViewGetPage(m_uiView), wkUrl);
+    WKRelease(wkUrl);
 
     // context used on all webpages.
     m_webContext = WKContextCreate();
-    m_webPageGroup = WKPageGroupCreateWithIdentifier(WKStringCreateWithUTF8CString("Web"));
+    wkStr = WKStringCreateWithUTF8CString("Web");
+    m_webPageGroup = WKPageGroupCreateWithIdentifier(wkStr);
+    WKRelease(wkStr);
     WKPreferencesRef webPreferences = WKPageGroupGetPreferences(m_webPageGroup);
     WKPreferencesSetAcceleratedCompositingEnabled(webPreferences, true);
 }

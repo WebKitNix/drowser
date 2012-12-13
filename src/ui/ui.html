@@ -66,17 +66,23 @@ function progressChanged(value)
 
 function addEmptyTab()
 {
-    var div = document.createElement("div");
     var tabId = nextId++;
-    div.id = String(tabId);
-    div.className = "tab";
-    div.appendChild(document.createTextNode("New Tab"));
-    div.onclick = function() { selectTab(div); }
-    document.getElementById("tabContainer").appendChild(div);
+    var tabElem = document.createElement("span");
+    tabElem.className = "tabDeco";
+    var contents = document.createElement("span");
+    contents.className = "tab";
+    contents.appendChild(document.createTextNode("New Tab"));
+    tabElem.appendChild(contents);
+
+    tabElem.id = String(tabId);
+    tabElem.onclick = function() { selectTab(tabElem); }
+    $("#plus").before(tabElem);
+
+    tabElem._url = "http://";
+    $("#urlBar").text(tabElem._url);
+
     window._addTab(tabId);
-    div._url = "http://";
-    $("#urlBar").text(div._url);
-    selectTab(div);
+    selectTab(tabElem);
 }
 
 function selectTab(obj)
@@ -85,9 +91,9 @@ function selectTab(obj)
         return;
 
     if (activeTab)
-        activeTab.className = "tab";
+        activeTab.className = "tabDeco";
 
-    obj.className = "tab active";
+    obj.className = "tabDeco active";
     activeTab = obj;
     window._setCurrentTab(parseInt(activeTab.id));
     var urlBar = document.getElementById("urlBar");
@@ -119,8 +125,7 @@ function goForward()
 </head>
 <body>
     <div id="tabBar">
-        <div id="tabContainer"></div>
-        <div id="plus" class="tab"><img src="images/plus.png" /></div>
+        <span class="tabDeco" id="plus"><span class="tab"><img src="images/plus.png" /></span></span>
     </div>
     <div class="toolBarRow">
         <div id="btnBack" onclick="goBack();"></div>

@@ -6,31 +6,40 @@
 
 #tabBar {
     background-image: url(./images/tab_base_fill.png);
-    background-repeat: repeat-x;
-    height: 30px;
-}
-#tabContainer {
-    float: left;
 }
 
 .tab {
+    display: inline-block;
     min-width: 160px;
-    border-width:10px 23px 4px 12px;
-    border-image: url(./images/tab_inactive.png) 10 23 4 12 fill;
-    line-height: 16px;
+    height: 22px;
+    margin: 0px 23px 0px 20px;
+    background-image: url(images/tab_inactive_fill.png);
+    background-repeat: repeat-x;
+    padding-top: 8px;
+    line-height: 19px;
+    vertical-align: center;
     font-size: 14px;
-    float: left;
-    margin-right: -18px;
-    z-index: 0;
 }
 
-#plus {
+.tabDeco {
+    display: inline-block;
+    background-image: url(images/tab_inactive_left.png), url(images/tab_inactive_right.png);
+    background-repeat: no-repeat;
+    background-position: 0 0, 100% 0%;
+    margin-right: -20px;
+}
+
+#plus > .tab {
     min-width: 0px;
     text-align: center;
 }
 
-.active {
-    border-image-source :url(./images/tab_active.png);
+#tabBar .tabDeco.active > .tab {
+    background-image: url(images/tab_active_fill.png);
+}
+
+#tabBar > .tabDeco.active {
+    background-image: url(images/tab_active_left.png), url(images/tab_active_right.png);
     position: relative;
     z-index: 1;
 }

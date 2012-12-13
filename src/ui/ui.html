@@ -22,8 +22,13 @@ $(document).ready(function() {
         }
         return true;
     });
+
     $("#urlBarBgCenter").click(function() {
         urlBar.focus();
+    });
+
+    urlBar.focusout(function() {
+        activeTab._url = urlBar.text()
     });
 
     $("#plus").click(addEmptyTab);
@@ -86,7 +91,7 @@ function selectTab(obj)
     activeTab = obj;
     window._setCurrentTab(parseInt(activeTab.id));
     var urlBar = document.getElementById("urlBar");
-    urlBar.value = activeTab._url;
+    urlBar.innerText = activeTab._url;
     if (urlBar.innerText == "http://")
         urlBar.focus();
 }

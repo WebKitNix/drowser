@@ -11,7 +11,6 @@
 #include <cstring>
 #include <cassert>
 
-
 // I don't care about windows or gcc < 4.x right now.
 #define UIBUNDLE_EXPORT __attribute__ ((visibility("default")))
 
@@ -127,7 +126,7 @@ void Bundle::callJSFunction(const char* name, WKTypeRef args)
 }
 
 JSValueRef Bundle::jsGenericCallback(JSContextRef ctx, JSObjectRef func, JSObjectRef thisObject, size_t argumentCount, const JSValueRef arguments[], JSValueRef*) {
-    WKTypeRef param = NULL;
+    WKTypeRef param = 0;
     if (argumentCount == 1) {
         JSType type = JSValueGetType(ctx, arguments[0]);
         switch(type) {
@@ -150,7 +149,8 @@ JSValueRef Bundle::jsGenericCallback(JSContextRef ctx, JSObjectRef func, JSObjec
 
     WKStringRef funcName = JSValueRefToWKStringRef(ctx, propValue);
     WKBundlePostMessage(m_bundle, funcName, param);
-    WKRelease(param);
+    if (param)
+        WKRelease(param);
     WKRelease(funcName);
 
     return JSValueMakeNull(ctx);

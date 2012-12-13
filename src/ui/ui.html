@@ -7,6 +7,7 @@
 
 activeTab = null;
 nextId = 0;
+progressBarBgMargin = 0;
 
 $(document).ready(function() {
 
@@ -21,6 +22,9 @@ $(document).ready(function() {
         }
         return true;
     });
+    $("#urlBarBgCenter").click(function() {
+        urlBar.focus();
+    });
 
     $("#plus").click(addEmptyTab);
 
@@ -33,12 +37,25 @@ $(document).ready(function() {
         window._forward = foo;
     }
 
+    progressBarBgMargin = parseInt($("#progressBarFill").css("margin-left"));
     addEmptyTab();
 });
 
-function setProgressBar(value)
+
+function progressFinished()
 {
-    $("#urlProgressBar").width(value + "%");
+    $("#progressBar").animate({opacity: 0.0}, 200);
+}
+
+function progressStarted()
+{
+    progressChanged(0);
+    $("#progressBar").animate({opacity: 1.0}, 200);
+}
+
+function progressChanged(value)
+{
+    $("#progressBar").width(($("#urlBarBgFill").width() * value) + progressBarBgMargin);
 }
 
 function addEmptyTab()
@@ -103,11 +120,18 @@ function goForward()
         <div id="btnBack" onclick="goBack();"></div>
         <div id="btnForward" onclick="goForward();"></div>
         <div id="btnRefresh" onClick=""></div>
+
+        <!-- Url bar -->
         <div id="urlBarBg">
-            <div id="urlProgressBar">
+            <div id="urlBarBgFill">
+                <div id="progressBar">
+                    <div id="progressBarFill">
+                    </div>
+                </div>
                 <div id="urlBar" contentEditable></div>
             </div>
         </div>
     </div>
+
 </body>
 </html>

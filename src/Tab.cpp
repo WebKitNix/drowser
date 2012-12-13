@@ -9,17 +9,6 @@
 #include "UiConstants.h"
 #include "Browser.h"
 
-static void onChangeProgressCallBack(WKPageRef, const void* clientInfo)
-{
-    ((Tab*)clientInfo)->onChangeProgress();
-}
-
-
-static void onViewNeedsDisplayCallback(NIXView, WKRect, const void* clientInfo)
-{
-    ((Tab*)clientInfo)->onViewNeedsDisplay();
-}
-
 Tab::Tab(Browser* browser, WKContextRef context, WKPageGroupRef pageGroup)
     : m_browser(browser)
 {
@@ -37,7 +26,7 @@ Tab::Tab(Browser* browser, WKContextRef context, WKPageGroupRef pageGroup)
     std::memset(&client, 0, sizeof(NIXViewClient));
     client.version = kNIXViewClientCurrentVersion;
     client.clientInfo = this;
-    client.viewNeedsDisplay = ::onViewNeedsDisplayCallback;
+    client.viewNeedsDisplay = &Tab::onViewNeedsDisplayCallback;
 
     NIXViewSetViewClient(m_view, &client);
 
@@ -45,7 +34,9 @@ Tab::Tab(Browser* browser, WKContextRef context, WKPageGroupRef pageGroup)
     memset(&loaderClient, 0, sizeof(WKPageLoaderClient));
     loaderClient.version = kWKPageLoaderClientCurrentVersion;
     loaderClient.clientInfo = this;
-    loaderClient.didChangeProgress = ::onChangeProgressCallBack;
+    loaderClient.didStartProgress = &Tab::onStartProgressCallback;
+    loaderClient.didChangeProgress = &Tab::onChangeProgressCallback;
+    loaderClient.didFinishProgress = &Tab::onFinishProgressCallback;
 
     WKPageSetPageLoaderClient(m_page, &loaderClient);
 }
@@ -55,15 +46,29 @@ Tab::~Tab()
     NIXViewRelease(m_view);
 }
 
-void Tab::onViewNeedsDisplay()
+void Tab::onStartProgressCallback(WKPageRef, const void* clientInfo)
 {
-    // FIXME: Only consider this if the tab is visible
-    m_browser->scheduleUpdateDisplay();
+    Tab* self = ((Tab*)clientInfo);
+    self->m_browser->progressStarted(self);
 }
 
-void Tab::onChangeProgress()
+void Tab::onChangeProgressCallback(WKPageRef, const void* clientInfo)
 {
-    m_browser->progressChanged(this, 100 * WKPageGetEstimatedProgress(m_page));
+    Tab* self = ((Tab*)clientInfo);
+    self->m_browser->progressChanged(self, WKPageGetEstimatedProgress(self->m_page));
+}
+
+void Tab::onFinishProgressCallback(WKPageRef, const void* clientInfo)
+{
+    Tab* self = ((Tab*)clientInfo);
+    self->m_browser->progressFinished(self);
+}
+
+void Tab::onViewNeedsDisplayCallback(NIXView, WKRect, const void* clientInfo)
+{
+    Tab* self = ((Tab*)clientInfo);
+    // FIXME: Only do this is the tab is visible!
+    self->m_browser->scheduleUpdateDisplay();
 }
 
 void Tab::setSize(WKSize size)

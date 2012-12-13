@@ -11,7 +11,7 @@ public:
     void setJSGlobalContext(JSGlobalContextRef context);
     void registerAPI();
 
-    void callJSFunction(const char *name, WKTypeRef args);
+    void callJSFunction(const char *name, JSValueRef args = 0);
     JSValueRef jsGenericCallback(JSContextRef ctx, JSObjectRef func, JSObjectRef thisObject, size_t argumentCount, const JSValueRef arguments[], JSValueRef*);
 
 private:
@@ -20,6 +20,7 @@ private:
     JSObjectRef m_windowObj;
 
     void registerJSFunction(const char* name);
+    static void didReceiveMessageToPage(WKBundleRef bundle, WKBundlePageRef page, WKStringRef name, WKTypeRef messageBody, const void*);
 };
 
 #endif

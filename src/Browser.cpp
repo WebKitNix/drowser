@@ -33,6 +33,12 @@ static void postToBundle(WKPageRef page, const char* message, const T& value)
     WKRelease(wkMessage);
 }
 
+void postToBundle(WKPageRef page, const char* message)
+{
+    WKStringRef wkMessage = WKStringCreateWithUTF8CString(message);
+    WKPagePostMessageToInjectedBundle(page, wkMessage, 0);
+    WKRelease(wkMessage);
+}
 
 Browser::Browser()
     : m_displayUpdateScheduled(false)
@@ -302,7 +308,17 @@ void Browser::loadUrlOnCurrentTab(const std::string& url)
     currentTab()->loadUrl(url);
 }
 
+void Browser::progressStarted(Tab*)
+{
+    postToBundle(m_uiPage, "progressStarted");
+}
+
 void Browser::progressChanged(Tab*, double value)
 {
-    postToBundle(m_uiPage, "setProgressBar", value);
+    postToBundle(m_uiPage, "progressChanged", value);
+}
+
+void Browser::progressFinished(Tab*)
+{
+    postToBundle(m_uiPage, "progressFinished");
 }

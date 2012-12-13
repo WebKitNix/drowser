@@ -58,14 +58,6 @@ static void didCreatePage(WKBundleRef, WKBundlePageRef page, const void* clientI
     WKBundlePageSetPageLoaderClient(page, &loaderClient);
 }
 
-static void didReceiveMessageToPage(WKBundleRef bundle, WKBundlePageRef page, WKStringRef name, WKTypeRef messageBody, const void*)
-{
-    // FIXME: Put some order on this mess, because it will grow a lot
-    if (WKStringIsEqualToUTF8CString(name, "setProgressBar")) {
-        gBundle->callJSFunction("setProgressBar", messageBody);
-    }
-}
-
 Bundle::Bundle(WKBundleRef bundle)
     : m_bundle(bundle)
 {
@@ -75,7 +67,7 @@ Bundle::Bundle(WKBundleRef bundle)
     client.version = kWKBundleClientCurrentVersion;
     client.clientInfo = this;
     client.didCreatePage = ::didCreatePage;
-    client.didReceiveMessageToPage = ::didReceiveMessageToPage;
+    client.didReceiveMessageToPage = &Bundle::didReceiveMessageToPage;
 
     WKBundleSetClient(bundle, &client);
 }
@@ -111,18 +103,26 @@ void Bundle::registerJSFunction(const char* name)
     JSStringRelease(funcName);
 }
 
-void Bundle::callJSFunction(const char* name, WKTypeRef args)
+void Bundle::callJSFunction(const char* name, JSValueRef args)
 {
-    // FIXME: Not all functions will get a double parameter :-)
-    double value = WKDoubleGetValue((WKDoubleRef)args);
-    JSValueRef jsArg = JSValueMakeNumber(m_jsContext, value);
-
     JSStringRef funcName = JSStringCreateWithUTF8CString(name);
     JSValueRef rawFunc = JSObjectGetProperty(m_jsContext, m_windowObj, funcName, 0);
     JSObjectRef func = JSValueToObject(m_jsContext, rawFunc, 0);
-    JSObjectCallAsFunction(m_jsContext, func, m_windowObj, 1, &jsArg, 0);
+    JSObjectCallAsFunction(m_jsContext, func, m_windowObj, args ? 1 : 0, args ? &args : 0, 0);
     JSStringRelease(funcName);
+}
 
+void Bundle::didReceiveMessageToPage(WKBundleRef, WKBundlePageRef, WKStringRef name, WKTypeRef messageBody, const void*)
+{
+    // FIXME: Put some order on this mess, because it will grow a lot
+    if (WKStringIsEqualToUTF8CString(name, "progressChanged")) {
+        JSValueRef arg = JSValueMakeNumber(gBundle->m_jsContext, WKDoubleGetValue((WKDoubleRef)messageBody));
+        gBundle->callJSFunction("progressChanged", arg);
+    } else if (WKStringIsEqualToUTF8CString(name, "progressStarted")) {
+        gBundle->callJSFunction("progressStarted");
+    } else if (WKStringIsEqualToUTF8CString(name, "progressFinished")) {
+        gBundle->callJSFunction("progressFinished");
+    }
 }
 
 JSValueRef Bundle::jsGenericCallback(JSContextRef ctx, JSObjectRef func, JSObjectRef thisObject, size_t argumentCount, const JSValueRef arguments[], JSValueRef*) {

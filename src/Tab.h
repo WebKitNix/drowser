@@ -24,13 +24,15 @@ public:
     void back();
     void forward();
 
-    // FIXME: These methods should be private
-    void onViewNeedsDisplay();
-    void onChangeProgress();
 private:
     Browser* m_browser;
     NIXView m_view;
     WKPageRef m_page;
+
+    static void onViewNeedsDisplayCallback(NIXView, WKRect, const void* clientInfo);
+    static void onStartProgressCallback(WKPageRef, const void* clientInfo);
+    static void onChangeProgressCallback(WKPageRef, const void* clientInfo);
+    static void onFinishProgressCallback(WKPageRef, const void* clientInfo);
 };
 
 #endif

@@ -12,7 +12,8 @@
     display: inline-block;
     min-width: 160px;
     height: 22px;
-    margin: 0px 23px 0px 20px;
+    line-height: 19px;
+    margin: 0px 0px 0px 20px;
     background-image: url(images/tab_inactive_fill.png);
     background-repeat: repeat-x;
     padding-top: 8px;
@@ -27,8 +28,12 @@
     background-repeat: no-repeat;
     background-position: 0 0, 100% 0%;
     margin-right: -20px;
+    white-space: nowrap;
 }
 
+#plus {
+    padding-right: 23px;
+}
 #plus > .tab {
     min-width: 0px;
     text-align: center;
@@ -42,6 +47,19 @@
     background-image: url(images/tab_active_left.png), url(images/tab_active_right.png);
     position: relative;
     z-index: 1;
+}
+
+.tabClose {
+    display: inline-block;
+    margin-right: 23px;
+    width: 14px;
+    height: 30px;
+    background-image: url(images/tab_inactive_btn_close.png);
+    margin-bottom: -8px;
+}
+
+#tabBar .tabDeco.active .tabClose {
+    background-image: url(images/tab_active_btn_close.png);
 }
 
 .toolBarRow {

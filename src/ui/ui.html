@@ -37,6 +37,7 @@ $(document).ready(function() {
     if (!window._addTab) {
         var foo = function() {};
         window._addTab = foo;
+        window._closeTab = foo;
         window._setCurrentTab = foo;
         window._loadUrl = foo;
         window._back = foo;
@@ -74,6 +75,11 @@ function addEmptyTab()
     contents.appendChild(document.createTextNode("New Tab"));
     tabElem.appendChild(contents);
 
+    var closeBtn = document.createElement("span");
+    closeBtn.className = "tabClose";
+    closeBtn.onclick = function() { closeTab(tabElem); };
+    tabElem.appendChild(closeBtn);
+
     tabElem.id = String(tabId);
     tabElem.onclick = function() { selectTab(tabElem); }
     $("#plus").before(tabElem);
@@ -100,6 +106,17 @@ function selectTab(obj)
     urlBar.innerText = activeTab._url;
     if (urlBar.innerText == "http://")
         urlBar.focus();
+}
+
+function closeTab(obj)
+{
+    window._closeTab(parseInt(obj.id));
+    $(obj).css("overflow", "hidden").animate({ opacity : 0, width: "20px"}, 300, "swing", function() {
+        var nextTab = obj.nextSibling;
+        $(this).remove();
+        if (nextTab.id != "plus")
+            selectTab(nextTab);
+    });
 }
 
 function loadUrl()

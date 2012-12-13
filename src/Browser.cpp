@@ -45,6 +45,7 @@ Browser::Browser()
     , m_window(DesktopWindow::create(this, 1024, 600))
     , m_glue(0)
     , m_uiFocused(true)
+    , m_currentTab(-1)
 {
     m_mainLoop = g_main_loop_new(0, false);
 
@@ -116,6 +117,7 @@ void Browser::initUi()
 
     m_glue = new InjectedBundleGlue(m_uiContext);
     m_glue->bind("_addTab", this, &Browser::addTab);
+    m_glue->bind("_closeTab", this, &Browser::closeTab);
     m_glue->bind("_setCurrentTab", this, &Browser::setCurrentTab);
     m_glue->bind("_loadUrl", this, &Browser::loadUrlOnCurrentTab);
     m_glue->bindToDispatcher("_back", this, &Tab::back);
@@ -157,7 +159,7 @@ void Browser::dispatchMessage(void (Obj::*method)())
 template<typename T>
 bool Browser::sendMouseEventToPage(T event)
 {
-    if (event->y > UI_HEIGHT && !m_tabs.empty()) {
+    if (event->y > UI_HEIGHT && m_currentTab != -1) {
         event->y -= UI_HEIGHT;
         currentTab()->sendMouseEvent(event);
         return true;
@@ -177,7 +179,7 @@ void Browser::onKeyPress(NIXKeyEvent* event)
 
     if (m_uiFocused)
         NIXViewSendKeyEvent(m_uiView, event);
-    else if (!m_tabs.empty())
+    else if (m_currentTab != -1)
         currentTab()->sendKeyEvent(event);
 }
 
@@ -227,7 +229,7 @@ void Browser::onWindowSizeChange(WKSize size)
         return;
 
     NIXViewSetSize(m_uiView, size);
-    if (m_tabs.size()) {
+    if (m_currentTab != -1) {
         size.height -= UI_HEIGHT;
         NIXViewSetSize(currentTab()->webView(), size);
     }
@@ -269,7 +271,7 @@ void Browser::updateDisplay()
 
     NIXViewPaintToCurrentGLContext(m_uiView);
 
-    if (m_tabs.size())
+    if (m_currentTab != -1)
         NIXViewPaintToCurrentGLContext(currentTab()->webView());
 
     m_window->swapBuffers();
@@ -292,6 +294,18 @@ void Browser::addTab(const int& tabId)
     tab->setSize(wndSize);
 
     m_currentTab = tabId;
+}
+
+void Browser::closeTab(const int& tabId)
+{
+    assert(m_tabs.count(tabId) != 0);
+
+    Tab* tab = m_tabs[tabId];
+    m_tabs.erase(tabId);
+    m_currentTab = -1;
+    delete tab;
+    if (m_tabs.empty())
+        onWindowClose();
 }
 
 void Browser::setCurrentTab(const int& tabId)

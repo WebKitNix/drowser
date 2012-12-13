@@ -35,6 +35,7 @@ public:
     virtual void onWindowClose();
 
     void addTab(const int& tabId);
+    void closeTab(const int& tabId);
     void setCurrentTab(const int& tabId);
     void loadUrlOnCurrentTab(const std::string& url);
     Tab* currentTab();

@@ -84,6 +84,7 @@ void Bundle::registerAPI()
 
     const char* funcs[] = {
         "_addTab",
+        "_closeTab",
         "_loadUrl",
         "_setCurrentTab",
         "_back",
@@ -136,6 +137,7 @@ JSValueRef Bundle::jsGenericCallback(JSContextRef ctx, JSObjectRef func, JSObjec
             case kJSTypeString:
                 param = JSValueRefToWKStringRef(ctx, arguments[0]);
                 break;
+            case kJSTypeObject:
             case kJSTypeNull:
             case kJSTypeUndefined:
             default:

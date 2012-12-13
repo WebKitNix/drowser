@@ -36,6 +36,11 @@ $(document).ready(function() {
     addEmptyTab();
 });
 
+function setProgressBar(value)
+{
+    $("#urlProgressBar").width(value + "%");
+}
+
 function addEmptyTab()
 {
     var div = document.createElement("div");
@@ -98,7 +103,11 @@ function goForward()
         <div id="btnBack" onclick="goBack();"></div>
         <div id="btnForward" onclick="goForward();"></div>
         <div id="btnRefresh" onClick=""></div>
-        <div id="urlBar" contentEditable></div>
+        <div id="urlBarBg">
+            <div id="urlProgressBar">
+                <div id="urlBar" contentEditable></div>
+            </div>
+        </div>
     </div>
 </body>
 </html>

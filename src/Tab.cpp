@@ -5,25 +5,23 @@
 #include <WebKit2/WKPage.h>
 #include <WebKit2/WKString.h>
 #include <WebKit2/WKURL.h>
+#include <WebKit2/WKType.h>
 #include "UiConstants.h"
-#include "WKConversions.h"
 #include "Browser.h"
 
-template<typename T>
-static void postToBundle(WKPageRef page, const char* message, const T& value)
+static void onChangeProgressCallBack(WKPageRef, const void* clientInfo)
 {
-    WKStringRef wkMessage = WKStringCreateWithUTF8CString(message);
-    WKPagePostMessageToInjectedBundle(page, wkMessage, toWK(value));
-    WKRelease(wkMessage);
+    ((Tab*)clientInfo)->onChangeProgress();
 }
 
-static void didChangeProgressCallBack(WKPageRef page, const void*)
+
+static void onViewNeedsDisplayCallback(NIXView, WKRect, const void* clientInfo)
 {
-    printf("loading... %.2lf\n", WKPageGetEstimatedProgress(page));
-    postToBundle(page, "setProgressBar", WKPageGetEstimatedProgress(page));
+    ((Tab*)clientInfo)->onViewNeedsDisplay();
 }
 
 Tab::Tab(Browser* browser, WKContextRef context, WKPageGroupRef pageGroup)
+    : m_browser(browser)
 {
     static const NIXMatrix webTransform = NIXMatrixMakeTranslation(0, UI_HEIGHT);
 
@@ -38,18 +36,16 @@ Tab::Tab(Browser* browser, WKContextRef context, WKPageGroupRef pageGroup)
     NIXViewClient client;
     std::memset(&client, 0, sizeof(NIXViewClient));
     client.version = kNIXViewClientCurrentVersion;
-    client.clientInfo = browser;
-
-    client.viewNeedsDisplay = [](NIXView, WKRect, const void* client) {
-        ((Browser*)client)->scheduleUpdateDisplay();
-    };
+    client.clientInfo = this;
+    client.viewNeedsDisplay = ::onViewNeedsDisplayCallback;
 
     NIXViewSetViewClient(m_view, &client);
 
     WKPageLoaderClient loaderClient;
     memset(&loaderClient, 0, sizeof(WKPageLoaderClient));
     loaderClient.version = kWKPageLoaderClientCurrentVersion;
-    loaderClient.didChangeProgress = didChangeProgressCallBack;
+    loaderClient.clientInfo = this;
+    loaderClient.didChangeProgress = ::onChangeProgressCallBack;
 
     WKPageSetPageLoaderClient(m_page, &loaderClient);
 }
@@ -57,6 +53,17 @@ Tab::Tab(Browser* browser, WKContextRef context, WKPageGroupRef pageGroup)
 Tab::~Tab()
 {
     NIXViewRelease(m_view);
+}
+
+void Tab::onViewNeedsDisplay()
+{
+    // FIXME: Only consider this if the tab is visible
+    m_browser->scheduleUpdateDisplay();
+}
+
+void Tab::onChangeProgress()
+{
+    m_browser->progressChanged(this, 100 * WKPageGetEstimatedProgress(m_page));
 }
 
 void Tab::setSize(WKSize size)

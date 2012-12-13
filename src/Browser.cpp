@@ -23,6 +23,16 @@
 #include "InjectedBundleGlue.h"
 #include "UiConstants.h"
 #include "Tab.h"
+#include "WKConversions.h"
+
+template<typename T>
+static void postToBundle(WKPageRef page, const char* message, const T& value)
+{
+    WKStringRef wkMessage = WKStringCreateWithUTF8CString(message);
+    WKPagePostMessageToInjectedBundle(page, wkMessage, toWK(value));
+    WKRelease(wkMessage);
+}
+
 
 Browser::Browser()
     : m_displayUpdateScheduled(false)
@@ -96,6 +106,7 @@ void Browser::initUi()
     NIXViewSetVisible(m_uiView, true);
     NIXViewSetActive(m_uiView, true);
     NIXViewSetSize(m_uiView, m_window->size());
+    m_uiPage = NIXViewGetPage(m_uiView);
 
     m_glue = new InjectedBundleGlue(m_uiContext);
     m_glue->bind("_addTab", this, &Browser::addTab);
@@ -289,4 +300,9 @@ void Browser::loadUrlOnCurrentTab(const std::string& url)
 {
     m_uiFocused = false;
     currentTab()->loadUrl(url);
+}
+
+void Browser::progressChanged(Tab*, double value)
+{
+    postToBundle(m_uiPage, "setProgressBar", value);
 }

@@ -44,7 +44,9 @@ public:
     template<typename Obj>
     void dispatchMessage(void (Obj::*method)());
 
+
     void scheduleUpdateDisplay();
+    void progressChanged(Tab*, double);
 
 private:
     GMainLoop* m_mainLoop;
@@ -53,6 +55,7 @@ private:
     InjectedBundleGlue* m_glue;
 
     NIXView m_uiView;
+    WKPageRef m_uiPage;
     WKContextRef m_uiContext;
     WKPageGroupRef m_uiPageGroup;
 

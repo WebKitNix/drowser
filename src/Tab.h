@@ -24,7 +24,11 @@ public:
     void back();
     void forward();
 
+    // FIXME: These methods should be private
+    void onViewNeedsDisplay();
+    void onChangeProgress();
 private:
+    Browser* m_browser;
     NIXView m_view;
     WKPageRef m_page;
 };

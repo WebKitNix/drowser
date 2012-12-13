@@ -15,7 +15,6 @@ browser:addFiles([[
   DesktopWindow.cpp
   InjectedBundleGlue.cpp
   Tab.cpp
-  WKConversions.cpp
 ]])
 
 UNIX:browser:addFiles([[

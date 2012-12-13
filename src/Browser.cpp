@@ -23,22 +23,6 @@
 #include "InjectedBundleGlue.h"
 #include "UiConstants.h"
 #include "Tab.h"
-#include "WKConversions.h"
-
-template<typename T>
-static void postToBundle(WKPageRef page, const char* message, const T& value)
-{
-    WKStringRef wkMessage = WKStringCreateWithUTF8CString(message);
-    WKPagePostMessageToInjectedBundle(page, wkMessage, toWK(value));
-    WKRelease(wkMessage);
-}
-
-void postToBundle(WKPageRef page, const char* message)
-{
-    WKStringRef wkMessage = WKStringCreateWithUTF8CString(message);
-    WKPagePostMessageToInjectedBundle(page, wkMessage, 0);
-    WKRelease(wkMessage);
-}
 
 Browser::Browser()
     : m_displayUpdateScheduled(false)

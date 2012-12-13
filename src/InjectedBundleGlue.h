@@ -5,7 +5,25 @@
 #include <unordered_map>
 #include <string>
 #include <WebKit2/WKContext.h>
-#include "WKConversions.h"
+#include <WebKit2/WKString.h>
+#include <WebKit2/WKType.h>
+#include <WebKit2/WKPage.h>
+
+template<typename T>
+T fromWK(WKTypeRef);
+
+template<typename T>
+WKTypeRef toWK(const T&);
+
+template<typename T>
+static void postToBundle(WKPageRef page, const char* message, const T& value)
+{
+    WKStringRef wkMessage = WKStringCreateWithUTF8CString(message);
+    WKPagePostMessageToInjectedBundle(page, wkMessage, toWK(value));
+    WKRelease(wkMessage);
+}
+
+void postToBundle(WKPageRef page, const char* message);
 
 class InjectedBundleGlue
 {

@@ -95,6 +95,7 @@
     opacity: 0;
     height: 22px;
     margin: 0px -2px 0px -2px;
+    min-width: 6px;
     background-image: url(images/progressbar_left.png),  url(images/progressbar_right.png);
     background-repeat: no-repeat;
     background-position: 0 0, 100% 0%;

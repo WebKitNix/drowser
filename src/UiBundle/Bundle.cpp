@@ -7,6 +7,7 @@
 #include <WebKit2/WKString.h>
 #include <WebKit2/WKStringPrivate.h>
 #include <WebKit2/WKType.h>
+#include <WebKit2/WKArray.h>
 #include <cstdio>
 #include <cstring>
 #include <cassert>
@@ -47,7 +48,7 @@ static void didClearWindowForFrame(WKBundlePageRef page, WKBundleFrameRef frame,
     bundle->registerAPI();
 }
 
-static void didCreatePage(WKBundleRef, WKBundlePageRef page, const void* clientInfo)
+void Bundle::didCreatePage(WKBundleRef, WKBundlePageRef page, const void* clientInfo)
 {
     WKBundlePageLoaderClient loaderClient;
     std::memset(&loaderClient, 0, sizeof(WKBundlePageLoaderClient));
@@ -56,6 +57,12 @@ static void didCreatePage(WKBundleRef, WKBundlePageRef page, const void* clientI
     loaderClient.didClearWindowObjectForFrame = ::didClearWindowForFrame;
 
     WKBundlePageSetPageLoaderClient(page, &loaderClient);
+
+    WKBundlePageUIClient uiClient;
+    std::memset(&uiClient, 0, sizeof(WKBundlePageUIClient));
+    uiClient.version = kWKBundlePageUIClientCurrentVersion;
+    uiClient.willRunJavaScriptAlert = &Bundle::willRunJavaScriptAlert;
+    WKBundlePageSetUIClient(page, &uiClient);
 }
 
 Bundle::Bundle(WKBundleRef bundle)
@@ -66,7 +73,7 @@ Bundle::Bundle(WKBundleRef bundle)
 
     client.version = kWKBundleClientCurrentVersion;
     client.clientInfo = this;
-    client.didCreatePage = ::didCreatePage;
+    client.didCreatePage = &Bundle::didCreatePage;
     client.didReceiveMessageToPage = &Bundle::didReceiveMessageToPage;
 
     WKBundleSetClient(bundle, &client);
@@ -104,12 +111,12 @@ void Bundle::registerJSFunction(const char* name)
     JSStringRelease(funcName);
 }
 
-void Bundle::callJSFunction(const char* name, JSValueRef args)
+void Bundle::callJSFunction(const char* name, int numArgs, JSValueRef* args)
 {
     JSStringRef funcName = JSStringCreateWithUTF8CString(name);
     JSValueRef rawFunc = JSObjectGetProperty(m_jsContext, m_windowObj, funcName, 0);
     JSObjectRef func = JSValueToObject(m_jsContext, rawFunc, 0);
-    JSObjectCallAsFunction(m_jsContext, func, m_windowObj, args ? 1 : 0, args ? &args : 0, 0);
+    JSObjectCallAsFunction(m_jsContext, func, m_windowObj, numArgs, numArgs ? args : 0, 0);
     JSStringRelease(funcName);
 }
 
@@ -118,11 +125,24 @@ void Bundle::didReceiveMessageToPage(WKBundleRef, WKBundlePageRef, WKStringRef n
     // FIXME: Put some order on this mess, because it will grow a lot
     if (WKStringIsEqualToUTF8CString(name, "progressChanged")) {
         JSValueRef arg = JSValueMakeNumber(gBundle->m_jsContext, WKDoubleGetValue((WKDoubleRef)messageBody));
-        gBundle->callJSFunction("progressChanged", arg);
+        gBundle->callJSFunction("progressChanged", 1, &arg);
     } else if (WKStringIsEqualToUTF8CString(name, "progressStarted")) {
         gBundle->callJSFunction("progressStarted");
     } else if (WKStringIsEqualToUTF8CString(name, "progressFinished")) {
         gBundle->callJSFunction("progressFinished");
+    } else if (WKStringIsEqualToUTF8CString(name, "titleChanged")) {
+
+        uint64_t arg0 = WKUInt64GetValue((WKUInt64Ref)WKArrayGetItemAtIndex((WKArrayRef)messageBody, 0));
+        JSStringRef arg1 = WKStringCopyJSString((WKStringRef)WKArrayGetItemAtIndex((WKArrayRef)messageBody, 1));
+
+        JSValueRef args[2];
+        args[0] = JSValueMakeNumber(gBundle->m_jsContext, arg0);
+        args[1] = JSValueMakeString(gBundle->m_jsContext, arg1); // We must copy the string to current JS context.
+
+        gBundle->callJSFunction("titleChanged", 2, args);
+        JSStringRelease(arg1);
+    } else {
+        puts("unknow message form Ui");
     }
 }
 
@@ -156,4 +176,13 @@ JSValueRef Bundle::jsGenericCallback(JSContextRef ctx, JSObjectRef func, JSObjec
     WKRelease(funcName);
 
     return JSValueMakeNull(ctx);
+}
+
+void Bundle::willRunJavaScriptAlert(WKBundlePageRef, WKStringRef alertText, WKBundleFrameRef, const void*)
+{
+    size_t size = WKStringGetMaximumUTF8CStringSize(alertText);
+    char* buffer = new char[size + 1];
+    WKStringGetUTF8CString(alertText, buffer, size);
+    printf("ALERT: %s\n", buffer);
+    delete[] buffer;
 }

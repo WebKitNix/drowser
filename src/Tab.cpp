@@ -8,9 +8,11 @@
 #include <WebKit2/WKType.h>
 #include "UiConstants.h"
 #include "Browser.h"
+#include "InjectedBundleGlue.h"
 
-Tab::Tab(Browser* browser, WKContextRef context, WKPageGroupRef pageGroup)
-    : m_browser(browser)
+Tab::Tab(int id, Browser* browser, WKContextRef context, WKPageGroupRef pageGroup)
+    : m_id(id)
+    , m_browser(browser)
 {
     static const NIXMatrix webTransform = NIXMatrixMakeTranslation(0, UI_HEIGHT);
 
@@ -37,6 +39,7 @@ Tab::Tab(Browser* browser, WKContextRef context, WKPageGroupRef pageGroup)
     loaderClient.didStartProgress = &Tab::onStartProgressCallback;
     loaderClient.didChangeProgress = &Tab::onChangeProgressCallback;
     loaderClient.didFinishProgress = &Tab::onFinishProgressCallback;
+    loaderClient.didReceiveTitleForFrame = &Tab::onReceiveTitleForFrame;
 
     WKPageSetPageLoaderClient(m_page, &loaderClient);
 }
@@ -69,6 +72,14 @@ void Tab::onViewNeedsDisplayCallback(NIXView, WKRect, const void* clientInfo)
     Tab* self = ((Tab*)clientInfo);
     // FIXME: Only do this is the tab is visible!
     self->m_browser->scheduleUpdateDisplay();
+}
+
+void Tab::onReceiveTitleForFrame(WKPageRef page, WKStringRef title, WKFrameRef, WKTypeRef, const void* clientInfo)
+{
+    Tab* self = ((Tab*)clientInfo);
+
+    if (page == self->m_page)
+        postToBundle(self->m_browser->ui(), "titleChanged", self->m_id, title);
 }
 
 void Tab::setSize(WKSize size)

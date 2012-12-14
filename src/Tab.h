@@ -10,7 +10,7 @@ class Browser;
 
 class Tab {
 public:
-    Tab(Browser* browser, WKContextRef context, WKPageGroupRef pageGroup);
+    Tab(int id, Browser* browser, WKContextRef context, WKPageGroupRef pageGroup);
     ~Tab();
 
     // temporary method while things is changing
@@ -25,6 +25,7 @@ public:
     void forward();
 
 private:
+    int m_id;
     Browser* m_browser;
     NIXView m_view;
     WKPageRef m_page;
@@ -33,6 +34,7 @@ private:
     static void onStartProgressCallback(WKPageRef, const void* clientInfo);
     static void onChangeProgressCallback(WKPageRef, const void* clientInfo);
     static void onFinishProgressCallback(WKPageRef, const void* clientInfo);
+    static void onReceiveTitleForFrame(WKPageRef page, WKStringRef title, WKFrameRef frame, WKTypeRef userData, const void* clientInfo);
 };
 
 #endif

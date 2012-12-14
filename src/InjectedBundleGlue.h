@@ -8,22 +8,36 @@
 #include <WebKit2/WKString.h>
 #include <WebKit2/WKType.h>
 #include <WebKit2/WKPage.h>
+#include <WebKit2/WKMutableArray.h>
 
 template<typename T>
 T fromWK(WKTypeRef);
 
 template<typename T>
 WKTypeRef toWK(const T&);
+template<>
+inline WKTypeRef toWK<WKStringRef>(const WKStringRef& value) { return value; }
+inline WKTypeRef createArg() { return 0; }
+inline WKTypeRef createArg(const WKTypeRef& value) { return value; }
 
-template<typename T>
-static void postToBundle(WKPageRef page, const char* message, const T& value)
+inline void _nop(...) {}
+
+template<typename ... T>
+WKTypeRef createArg(WKTypeRef first, T...t)
 {
-    WKStringRef wkMessage = WKStringCreateWithUTF8CString(message);
-    WKPagePostMessageToInjectedBundle(page, wkMessage, toWK(value));
-    WKRelease(wkMessage);
+    WKMutableArrayRef pack = WKMutableArrayCreate();
+    WKArrayAppendItem(pack, first);
+    _nop((WKArrayAppendItem(pack, t), 1)...);
+    return pack;
 }
 
-void postToBundle(WKPageRef page, const char* message);
+template<typename ...T>
+static void postToBundle(WKPageRef page, const char* message, const T& ... values)
+{
+    WKStringRef wkMessage = WKStringCreateWithUTF8CString(message);
+    WKPagePostMessageToInjectedBundle(page, wkMessage, createArg(toWK(values)...));
+    WKRelease(wkMessage);
+}
 
 class InjectedBundleGlue
 {

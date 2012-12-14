@@ -45,6 +45,7 @@ public:
     template<typename Obj>
     void dispatchMessage(void (Obj::*method)());
 
+    WKPageRef ui() { return m_uiPage; }
 
     void scheduleUpdateDisplay();
     void progressStarted(Tab*);

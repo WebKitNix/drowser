@@ -65,6 +65,13 @@ function progressChanged(value)
     $("#progressBar").width(($("#urlBarBgFill").width() * value) + progressBarBgMargin);
 }
 
+function titleChanged(tabId, title)
+{
+    var tab = document.getElementById(String(tabId));
+    if (tab)
+        tab.firstChild.innerText = title;
+}
+
 function addEmptyTab()
 {
     var tabId = nextId++;

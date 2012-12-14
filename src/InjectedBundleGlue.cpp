@@ -29,11 +29,10 @@ WKTypeRef toWK<double>(const double& value)
     return WKDoubleCreate(value);
 }
 
-void postToBundle(WKPageRef page, const char* message)
+template<>
+WKTypeRef toWK<int>(const int& value)
 {
-    WKStringRef wkMessage = WKStringCreateWithUTF8CString(message);
-    WKPagePostMessageToInjectedBundle(page, wkMessage, 0);
-    WKRelease(wkMessage);
+    return WKUInt64Create(value);
 }
 
 extern "C" {

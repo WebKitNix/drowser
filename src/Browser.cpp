@@ -270,7 +270,7 @@ void Browser::addTab(const int& tabId)
 {
     assert(m_tabs.count(tabId) == 0);
 
-    Tab* tab = new Tab(this, m_webContext, m_webPageGroup);
+    Tab* tab = new Tab(tabId, this, m_webContext, m_webPageGroup);
     m_tabs[tabId] = tab;
 
     WKSize wndSize = m_window->size();

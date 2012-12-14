@@ -39,12 +39,14 @@ $(document).ready(function() {
         window._addTab = foo;
         window._closeTab = foo;
         window._setCurrentTab = foo;
+        window._toolBarHeightChanged = foo;
         window._loadUrl = foo;
         window._back = foo;
         window._forward = foo;
     }
 
     progressBarBgMargin = parseInt($("#progressBarFill").css("margin-left"));
+    updateTabHeight();
     addEmptyTab();
 });
 
@@ -72,8 +74,16 @@ function titleChanged(tabId, title)
         tab.firstChild.innerText = title;
 }
 
+function updateTabHeight()
+{
+    window._toolBarHeightChanged($("#tabBar").height() + 36);
+}
+
 function addEmptyTab()
 {
+    var tabBar = $("#tabBar");
+    var barHeight = tabBar.height();
+
     var tabId = nextId++;
     var tabElem = document.createElement("span");
     tabElem.className = "tabDeco";
@@ -93,6 +103,9 @@ function addEmptyTab()
 
     tabElem._url = "http://";
     $("#urlBar").text(tabElem._url);
+
+    if (barHeight < tabBar.height())
+        updateTabHeight();
 
     window._addTab(tabId);
     selectTab(tabElem);
@@ -124,12 +137,18 @@ function selectTab(obj)
 
 function closeTab(obj)
 {
+    var tabBar = $("#tabBar");
+    var barHeight = tabBar.height();
+
     window._closeTab(parseInt(obj.id));
     $(obj).css("overflow", "hidden").animate({ opacity : 0, width: "20px"}, 300, "swing", function() {
         var nextTab = obj.nextSibling;
         $(this).remove();
         if (nextTab.id != "plus")
             selectTab(nextTab);
+
+        if (barHeight > tabBar.height())
+            updateTabHeight()
     });
 }
 

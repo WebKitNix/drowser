@@ -92,6 +92,7 @@ void Bundle::registerAPI()
     const char* funcs[] = {
         "_addTab",
         "_closeTab",
+        "_toolBarHeightChanged",
         "_loadUrl",
         "_setCurrentTab",
         "_back",

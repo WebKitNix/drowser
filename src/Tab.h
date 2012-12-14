@@ -20,6 +20,8 @@ public:
     template<typename T>
     void sendMouseEvent(T);
 
+    void setViewportTransformation(NIXMatrix*);
+
     void loadUrl(const std::string& url);
     void back();
     void forward();

@@ -36,6 +36,7 @@ public:
 
     void addTab(const int& tabId);
     void closeTab(const int& tabId);
+    void toolBarHeightChanged(const int& height);
     void setCurrentTab(const int& tabId);
     void loadUrlOnCurrentTab(const std::string& url);
     Tab* currentTab();
@@ -64,6 +65,8 @@ private:
     WKPageGroupRef m_uiPageGroup;
 
     bool m_uiFocused;
+    int m_toolBarHeight;
+    NIXMatrix m_webViewsTransform;
 
     std::map<int, Tab*> m_tabs;
     int m_currentTab;

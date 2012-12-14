@@ -7,7 +7,6 @@
 #include <WebKit2/WKString.h>
 #include <WebKit2/WKURL.h>
 #include <WebKit2/WKType.h>
-#include "UiConstants.h"
 #include "Browser.h"
 #include "InjectedBundleGlue.h"
 
@@ -15,14 +14,11 @@ Tab::Tab(int id, Browser* browser, WKContextRef context, WKPageGroupRef pageGrou
     : m_id(id)
     , m_browser(browser)
 {
-    static const NIXMatrix webTransform = NIXMatrixMakeTranslation(0, UI_HEIGHT);
-
     m_view = NIXViewCreate(context, pageGroup);
     NIXViewInitialize(m_view);
     NIXViewSetFocused(m_view, true);
     NIXViewSetVisible(m_view, true);
     NIXViewSetActive(m_view, true);
-    NIXViewSetUserViewportTransformation(m_view, &webTransform);
     m_page = NIXViewGetPage(m_view);
 
     NIXViewClient client;
@@ -103,6 +99,11 @@ template<>
 void Tab::sendMouseEvent<NIXMouseEvent*>(NIXMouseEvent* event)
 {
     NIXViewSendMouseEvent(m_view, event);
+}
+
+void Tab::setViewportTransformation(NIXMatrix* matrix)
+{
+    NIXViewSetUserViewportTransformation(m_view, matrix);
 }
 
 void Tab::loadUrl(const std::string& url)

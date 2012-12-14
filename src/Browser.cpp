@@ -21,7 +21,6 @@
 #include <string>
 
 #include "InjectedBundleGlue.h"
-#include "UiConstants.h"
 #include "Tab.h"
 
 Browser::Browser()
@@ -29,6 +28,7 @@ Browser::Browser()
     , m_window(DesktopWindow::create(this, 1024, 600))
     , m_glue(0)
     , m_uiFocused(true)
+    , m_toolBarHeight(0)
     , m_currentTab(-1)
 {
     m_mainLoop = g_main_loop_new(0, false);
@@ -102,6 +102,7 @@ void Browser::initUi()
     m_glue = new InjectedBundleGlue(m_uiContext);
     m_glue->bind("_addTab", this, &Browser::addTab);
     m_glue->bind("_closeTab", this, &Browser::closeTab);
+    m_glue->bind("_toolBarHeightChanged", this, &Browser::toolBarHeightChanged);
     m_glue->bind("_setCurrentTab", this, &Browser::setCurrentTab);
     m_glue->bind("_loadUrl", this, &Browser::loadUrlOnCurrentTab);
     m_glue->bindToDispatcher("_back", this, &Tab::back);
@@ -143,8 +144,8 @@ void Browser::dispatchMessage(void (Obj::*method)())
 template<typename T>
 bool Browser::sendMouseEventToPage(T event)
 {
-    if (event->y > UI_HEIGHT && m_currentTab != -1) {
-        event->y -= UI_HEIGHT;
+    if (event->y > m_toolBarHeight && m_currentTab != -1) {
+        event->y -= m_toolBarHeight;
         currentTab()->sendMouseEvent(event);
         return true;
     }
@@ -214,7 +215,7 @@ void Browser::onWindowSizeChange(WKSize size)
 
     NIXViewSetSize(m_uiView, size);
     if (m_currentTab != -1) {
-        size.height -= UI_HEIGHT;
+        size.height -= m_toolBarHeight;
         NIXViewSetSize(currentTab()->webView(), size);
     }
     scheduleUpdateDisplay();
@@ -271,10 +272,11 @@ void Browser::addTab(const int& tabId)
     assert(m_tabs.count(tabId) == 0);
 
     Tab* tab = new Tab(tabId, this, m_webContext, m_webPageGroup);
+    tab->setViewportTransformation(&m_webViewsTransform);
     m_tabs[tabId] = tab;
 
     WKSize wndSize = m_window->size();
-    wndSize.height -= UI_HEIGHT;
+    wndSize.height -= m_toolBarHeight;
     tab->setSize(wndSize);
 
     m_currentTab = tabId;
@@ -290,6 +292,21 @@ void Browser::closeTab(const int& tabId)
     delete tab;
     if (m_tabs.empty())
         onWindowClose();
+}
+
+void Browser::toolBarHeightChanged(const int& height)
+{
+    m_toolBarHeight = height;
+    m_webViewsTransform = NIXMatrixMakeTranslation(0, m_toolBarHeight);
+
+    // FIXME: Better to delay this global relayout in a near future
+    WKSize newSize = m_window->size();
+    newSize.height -= m_toolBarHeight;
+    for (auto p : m_tabs) {
+        Tab* tab = p.second;
+        tab->setViewportTransformation(&m_webViewsTransform);
+        tab->setSize(newSize);
+    }
 }
 
 void Browser::setCurrentTab(const int& tabId)

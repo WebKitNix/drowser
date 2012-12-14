@@ -3,6 +3,7 @@
 #include <cstring>
 #include <WebKit2/WKNumber.h>
 #include <WebKit2/WKPage.h>
+#include <WebKit2/WKFrame.h>
 #include <WebKit2/WKString.h>
 #include <WebKit2/WKURL.h>
 #include <WebKit2/WKType.h>
@@ -74,11 +75,11 @@ void Tab::onViewNeedsDisplayCallback(NIXView, WKRect, const void* clientInfo)
     self->m_browser->scheduleUpdateDisplay();
 }
 
-void Tab::onReceiveTitleForFrame(WKPageRef page, WKStringRef title, WKFrameRef, WKTypeRef, const void* clientInfo)
+void Tab::onReceiveTitleForFrame(WKPageRef page, WKStringRef title, WKFrameRef frame, WKTypeRef, const void* clientInfo)
 {
     Tab* self = ((Tab*)clientInfo);
 
-    if (page == self->m_page)
+    if (page == self->m_page && WKFrameIsMainFrame(frame))
         postToBundle(self->m_browser->ui(), "titleChanged", self->m_id, title);
 }
 

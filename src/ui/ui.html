@@ -111,8 +111,15 @@ function selectTab(obj)
     window._setCurrentTab(parseInt(activeTab.id));
     var urlBar = document.getElementById("urlBar");
     urlBar.innerText = activeTab._url;
-    if (urlBar.innerText == "http://")
+    if (urlBar.innerText == "http://") {
         urlBar.focus();
+        var range = document.createRange();
+        range.selectNodeContents(urlBar);
+        range.collapse(false);
+        var sel = window.getSelection();
+        sel.removeAllRanges();
+        sel.addRange(range);
+    }
 }
 
 function closeTab(obj)

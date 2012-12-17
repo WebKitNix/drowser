@@ -3,6 +3,7 @@
 <head>
 <link rel="stylesheet" type="text/css" href="style.css" />
 <script type="text/javascript" src="jquery-1.8.3.min.js"></script>
+<script type="text/javascript" src="jquery.hotkeys.js"></script>
 <script type="text/javascript">
 
 activeTab = null;
@@ -32,6 +33,9 @@ $(document).ready(function() {
     });
 
     $("#plus").click(addEmptyTab);
+
+    $(document).bind('keydown', 'ctrl+t', addEmptyTab);
+    $(document).bind('keydown', 'ctrl+w', function(){closeTab();});
 
     // Function stubs to debug UI on a browser
     if (!window._addTab) {
@@ -137,15 +141,20 @@ function selectTab(obj)
 
 function closeTab(obj)
 {
+    if (!obj)
+        obj = activeTab;
+
     var tabBar = $("#tabBar");
     var barHeight = tabBar.height();
 
     window._closeTab(parseInt(obj.id));
     $(obj).css("overflow", "hidden").animate({ opacity : 0, width: "20px"}, 300, "swing", function() {
         var nextTab = obj.nextSibling;
-        $(this).remove();
         if (nextTab.id != "plus")
             selectTab(nextTab);
+        else if (obj.previousSibling)
+            selectTab(obj.previousSibling);
+        $(this).remove();
 
         if (barHeight > tabBar.height())
             updateTabHeight()

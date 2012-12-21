@@ -34,8 +34,8 @@ $(document).ready(function() {
 
     $("#plus").click(addEmptyTab);
 
-    $(document).bind('keydown', 'ctrl+t', addEmptyTab);
-    $(document).bind('keydown', 'ctrl+w', function(){closeTab();});
+    $(document).bind('keydown', 'ctrl+t', function() { addEmptyTab(); return false; });
+    $(document).bind('keydown', 'ctrl+w', function() { closeTab(); return false; });
 
     // Function stubs to debug UI on a browser
     if (!window._addTab) {

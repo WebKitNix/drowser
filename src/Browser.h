@@ -49,9 +49,6 @@ public:
     WKPageRef ui() { return m_uiPage; }
 
     void scheduleUpdateDisplay();
-    void progressStarted(Tab*);
-    void progressChanged(Tab*, double);
-    void progressFinished(Tab*);
 
 private:
     GMainLoop* m_mainLoop;

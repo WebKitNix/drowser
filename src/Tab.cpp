@@ -49,19 +49,19 @@ Tab::~Tab()
 void Tab::onStartProgressCallback(WKPageRef, const void* clientInfo)
 {
     Tab* self = ((Tab*)clientInfo);
-    self->m_browser->progressStarted(self);
+    postToBundle(self->m_browser->ui(), "progressStarted", self->m_id);
 }
 
 void Tab::onChangeProgressCallback(WKPageRef, const void* clientInfo)
 {
     Tab* self = ((Tab*)clientInfo);
-    self->m_browser->progressChanged(self, WKPageGetEstimatedProgress(self->m_page));
+    postToBundle(self->m_browser->ui(), "progressChanged", self->m_id, WKPageGetEstimatedProgress(self->m_page));
 }
 
 void Tab::onFinishProgressCallback(WKPageRef, const void* clientInfo)
 {
     Tab* self = ((Tab*)clientInfo);
-    self->m_browser->progressFinished(self);
+    postToBundle(self->m_browser->ui(), "progressFinished", self->m_id);
 }
 
 void Tab::onViewNeedsDisplayCallback(NIXView, WKRect, const void* clientInfo)

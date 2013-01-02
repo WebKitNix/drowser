@@ -125,12 +125,16 @@ void Bundle::didReceiveMessageToPage(WKBundleRef, WKBundlePageRef, WKStringRef n
 {
     // FIXME: Put some order on this mess, because it will grow a lot
     if (WKStringIsEqualToUTF8CString(name, "progressChanged")) {
-        JSValueRef arg = JSValueMakeNumber(gBundle->m_jsContext, WKDoubleGetValue((WKDoubleRef)messageBody));
-        gBundle->callJSFunction("progressChanged", 1, &arg);
+        JSValueRef args[2];
+        args[0] = JSValueMakeNumber(gBundle->m_jsContext, WKUInt64GetValue((WKUInt64Ref)WKArrayGetItemAtIndex((WKArrayRef)messageBody, 0)));
+        args[1] = JSValueMakeNumber(gBundle->m_jsContext, WKDoubleGetValue((WKDoubleRef)WKArrayGetItemAtIndex((WKArrayRef)messageBody, 1)));
+        gBundle->callJSFunction("progressChanged", 2, args);
     } else if (WKStringIsEqualToUTF8CString(name, "progressStarted")) {
-        gBundle->callJSFunction("progressStarted");
+        JSValueRef arg = JSValueMakeNumber(gBundle->m_jsContext, WKUInt64GetValue((WKUInt64Ref)messageBody));
+        gBundle->callJSFunction("progressStarted", 1, &arg);
     } else if (WKStringIsEqualToUTF8CString(name, "progressFinished")) {
-        gBundle->callJSFunction("progressFinished");
+        JSValueRef arg = JSValueMakeNumber(gBundle->m_jsContext, WKUInt64GetValue((WKUInt64Ref)messageBody));
+        gBundle->callJSFunction("progressFinished", 1, &arg);
     } else if (WKStringIsEqualToUTF8CString(name, "titleChanged")) {
 
         uint64_t arg0 = WKUInt64GetValue((WKUInt64Ref)WKArrayGetItemAtIndex((WKArrayRef)messageBody, 0));

@@ -9,6 +9,7 @@
 activeTab = null;
 nextId = 0;
 progressBarBgMargin = 0;
+progressBarVisible = false;
 
 $(document).ready(function() {
 
@@ -55,20 +56,33 @@ $(document).ready(function() {
 });
 
 
-function progressFinished()
+function progressFinished(tabId)
 {
-    $("#progressBar").animate({opacity: 0.0}, 200);
+    var tab = document.getElementById(tabId);
+    tab.progress = 0;
+    if (tab == activeTab) {
+        $("#progressBar").animate({opacity: 0.0}, 200);
+        progressBarVisible = false;
+    }
 }
 
-function progressStarted()
+function progressStarted(tabId)
 {
-    progressChanged(0);
-    $("#progressBar").animate({opacity: 1.0}, 200);
+    var tab = document.getElementById(tabId);
+    if (tab == activeTab) {
+        progressChanged(tabId, tab.progress);
+        if (!progressBarVisible)
+            $("#progressBar").animate({opacity: 1.0}, 200);
+        progressBarVisible = true;
+    }
 }
 
-function progressChanged(value)
+function progressChanged(tabId, value)
 {
-    $("#progressBar").width(($("#urlBarBgFill").width() * value) + progressBarBgMargin);
+    var tab = document.getElementById(tabId);
+    tab.progress = value;
+    if (tab == activeTab)
+        $("#progressBar").width(($("#urlBarBgFill").width() * value) + progressBarBgMargin);
 }
 
 function titleChanged(tabId, title)
@@ -102,6 +116,7 @@ function addEmptyTab()
     tabElem.appendChild(closeBtn);
 
     tabElem.id = String(tabId);
+    tabElem.progress = 0;
     tabElem.onclick = function() { selectTab(tabElem); }
     $("#plus").before(tabElem);
 
@@ -125,6 +140,12 @@ function selectTab(obj)
 
     obj.className = "tabDeco active";
     activeTab = obj;
+
+    if (obj.progress > 0)
+        progressStarted(obj.id);
+    else if (progressBarVisible)
+        progressFinished(obj.id);
+
     window._setCurrentTab(parseInt(activeTab.id));
     var urlBar = document.getElementById("urlBar");
     urlBar.innerText = activeTab._url;

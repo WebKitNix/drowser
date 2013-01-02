@@ -19,7 +19,9 @@
 #include <libgen.h>
 #include <limits.h>
 #include <string>
+#include <vector>
 
+#include "FatalError.h"
 #include "InjectedBundleGlue.h"
 #include "Tab.h"
 
@@ -65,6 +67,24 @@ static std::string getApplicationPath()
     }
 }
 
+static std::string getUiFile()
+{
+    std::vector<std::string> locations = {
+        getApplicationPath() + "/../share/Lasso/ui.html",
+        UI_SEARCH_PATH "/ui.html",
+    };
+    for (const std::string& location : locations) {
+        if (FILE* fp = fopen(location.c_str(), "r")) {
+            fclose(fp);
+            return location;
+        } else {
+            puts(location.c_str());
+            fflush(stdout);
+        }
+    }
+    throw FatalError("Can't find UI files.");
+}
+
 void Browser::initUi()
 {
     const std::string appPath = getApplicationPath();
@@ -107,8 +127,8 @@ void Browser::initUi()
     m_glue->bind("_loadUrl", this, &Browser::loadUrlOnCurrentTab);
     m_glue->bindToDispatcher("_back", this, &Tab::back);
 
-    // FIXME: This should probably be a list of location to search for the Ui files.
-    WKURLRef wkUrl = WKURLCreateWithUTF8CString("file://" UI_SEARCH_PATH "/ui.html");
+    std::string uiHtml = getUiFile();
+    WKURLRef wkUrl = WKURLCreateWithUTF8CString(("file://" + uiHtml).c_str());
     WKPageLoadURL(NIXViewGetPage(m_uiView), wkUrl);
     WKRelease(wkUrl);
 

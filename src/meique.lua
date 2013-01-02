@@ -31,7 +31,34 @@ end)
 browser:addDependency(browserUi)
 browser:addCustomFlags("-Wall -std=c++11 -D'UI_SEARCH_PATH=\""..browser:sourceDir().."ui\"'")
 browser:install("bin")
+browser:install([[
+  ui/jquery-1.8.3.min.js
+  ui/jquery.hotkeys.js
+  ui/style.css
+  ui/ui.html
+]], "share/Lasso")
+-- Images
+browser:install([[
+  ui/images/btn_back.png
+  ui/images/btn_forward.png
+  ui/images/btn_refresh.png
+  ui/images/plus.png
+  ui/images/progressbar_center.png
+  ui/images/progressbar_left.png
+  ui/images/progressbar_right.png
+  ui/images/tab_active_btn_close.png
+  ui/images/tab_active_fill.png
+  ui/images/tab_active_left.png
+  ui/images/tab_active_right.png
+  ui/images/tab_base_fill.png
+  ui/images/tab_inactive_btn_close.png
+  ui/images/tab_inactive_fill.png
+  ui/images/tab_inactive_left.png
+  ui/images/tab_inactive_right.png
+  ui/images/urlbar_fill.png
+  ui/images/urlbar_input_center.png
+  ui/images/urlbar_input_left.png
+  ui/images/urlbar_input_right.png
+]], "share/Lasso/images")
 
 addSubdirectory("UiBundle")
--- meique doesn't support targetless installs yet.
--- addSubdirectory("ui")

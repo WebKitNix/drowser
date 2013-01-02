@@ -4,6 +4,7 @@
 #include <X11/Xutil.h>
 #include <GL/glx.h>
 
+#include "FatalError.h"
 #include "XlibEventSource.h"
 #include "XlibEventUtils.h"
 
@@ -58,7 +59,7 @@ DesktopWindowLinux::DesktopWindowLinux(DesktopWindowClient* client, int width, i
     , m_clickCount(0)
 {
     if (!m_display)
-        throw "couldn't connect to X server"; // FIXME: Replace by a exception type
+        throw FatalError("Couldn't connect to X server");
 
     VisualID visualID = setupXVisualID();
     m_eventSource = new XlibEventSource(m_display, this);
@@ -98,7 +99,7 @@ VisualID DesktopWindowLinux::setupXVisualID()
     m_visualInfo = glXChooseVisual(m_display, 0, attributes);
 
     if (!m_visualInfo)
-        throw "glXChooseVisual() failed.";
+        throw FatalError("glXChooseVisual() failed.");
 
     return m_visualInfo->visualid;
 }
@@ -107,7 +108,7 @@ void DesktopWindowLinux::createGLContext()
 {
     m_context = glXCreateContext(m_display, m_visualInfo, 0, GL_TRUE);
     if (!m_context)
-        throw "glXCreateContext() failed.";
+        throw FatalError("glXCreateContext() failed.");
 }
 
 void DesktopWindowLinux::destroyGLContext()
@@ -124,7 +125,7 @@ Window DesktopWindowLinux::createXWindow(VisualID visualID)
     visualInfoTemplate.visualid = visualID;
     XVisualInfo* visualInfo = XGetVisualInfo(m_display, VisualIDMask, &visualInfoTemplate, &visualInfoCount);
     if (!visualInfo)
-        throw "couldn't get X visual";
+        throw FatalError("Couldn't get X visual");
 
     Window rootWindow = DefaultRootWindow(m_display);
 

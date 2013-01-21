@@ -88,7 +88,7 @@ static std::string getUiFile()
 void Browser::initUi()
 {
     const std::string appPath = getApplicationPath();
-    WKStringRef wkStr = WKStringCreateWithUTF8CString((appPath + "/UiBundle/libUiBundle.so").c_str());
+    WKStringRef wkStr = WKStringCreateWithUTF8CString((appPath + "/injectedbundle/ui/libUiBundle.so").c_str());
     m_uiContext = WKContextCreateWithInjectedBundlePath(wkStr);
     WKRelease(wkStr);
     wkStr = WKStringCreateWithUTF8CString("Browser");

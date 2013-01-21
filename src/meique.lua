@@ -61,4 +61,4 @@ browser:install([[
   ui/images/urlbar_input_right.png
 ]], "share/Lasso/images")
 
-addSubdirectory("UiBundle")
+addSubdirectory("injectedbundle")

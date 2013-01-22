@@ -16,10 +16,11 @@ std::string fromWK(WKTypeRef value)
 {
     WKStringRef wkStr = reinterpret_cast<WKStringRef>(value);
     size_t wkStrSize = WKStringGetMaximumUTF8CStringSize(wkStr);
-    char* buffer = new char[wkStrSize + 1];
-    WKStringGetUTF8CString(wkStr, buffer, wkStrSize);
-    std::string result(buffer);
-    delete[] buffer;
+    std::string result;
+    result.resize(wkStrSize + 1);
+    size_t realSize = WKStringGetUTF8CString(wkStr, &result[0], result.length());
+    if (realSize > 0)
+        result.resize(realSize - 1);
     return result;
 }
 

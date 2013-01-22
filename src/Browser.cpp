@@ -133,7 +133,9 @@ void Browser::initUi()
     WKRelease(wkUrl);
 
     // context used on all webpages.
-    m_webContext = WKContextCreate();
+    wkStr = WKStringCreateWithUTF8CString((appPath + "/injectedbundle/page/libPageBundle.so").c_str());
+    m_webContext = WKContextCreateWithInjectedBundlePath(wkStr);
+    WKRelease(wkStr);
     wkStr = WKStringCreateWithUTF8CString("Web");
     m_webPageGroup = WKPageGroupCreateWithIdentifier(wkStr);
     WKRelease(wkStr);

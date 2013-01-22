@@ -1,2 +1,3 @@
 addSubdirectory("ui")
+addSubdirectory("page")
 

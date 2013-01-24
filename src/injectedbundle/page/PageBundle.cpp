@@ -1,5 +1,5 @@
 #include "PageBundle.h"
-#include "Gamepad.h"
+#include "gamepad/Gamepad.h"
 
 // I don't care about windows or gcc < 4.x right now.
 #define UIBUNDLE_EXPORT __attribute__ ((visibility("default")))

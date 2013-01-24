@@ -13,6 +13,16 @@
 static Atom wmDeleteMessageAtom;
 static const double DOUBLE_CLICK_INTERVAL = 300;
 
+class ScopedXFree
+{
+public:
+    ScopedXFree(void* ptr) : m_ptr(ptr) {}
+    ScopedXFree(const ScopedXFree&) = delete;
+    ~ScopedXFree() { XFree(m_ptr); }
+private:
+    void* m_ptr;
+};
+
 class DesktopWindowLinux : public DesktopWindow, public XlibEventSource::Client {
 public:
     DesktopWindowLinux(DesktopWindowClient* client, int width, int height);
@@ -21,10 +31,8 @@ public:
     void swapBuffers();
 
 private:
-    void createGLContext();
+    void setup();
     void destroyGLContext();
-    VisualID setupXVisualID();
-    Window createXWindow(VisualID visualID);
     void updateSizeIfNeeded(int width, int height);
 
     void handleXEvent(const XEvent&);
@@ -51,21 +59,17 @@ DesktopWindow* DesktopWindow::create(DesktopWindowClient* client, int width, int
 DesktopWindowLinux::DesktopWindowLinux(DesktopWindowClient* client, int width, int height)
     : DesktopWindow(client, width, height)
     , m_eventSource(0)
-    , m_display(XOpenDisplay(0))
+    , m_display(0)
     , m_lastClickTime(0)
     , m_lastClickX(0)
     , m_lastClickY(0)
     , m_lastClickButton(kWKEventMouseButtonNoButton)
     , m_clickCount(0)
 {
-    if (!m_display)
-        throw FatalError("Couldn't connect to X server");
+    setup();
 
-    VisualID visualID = setupXVisualID();
     m_eventSource = new XlibEventSource(m_display, this);
-    m_window = createXWindow(visualID);
 
-    createGLContext();
     makeCurrent();
     glEnable(GL_DEPTH_TEST);
 }
@@ -88,25 +92,53 @@ void DesktopWindowLinux::swapBuffers()
     glXSwapBuffers(m_display, m_window);
 }
 
-VisualID DesktopWindowLinux::setupXVisualID()
+void DesktopWindowLinux::setup()
 {
-    GLint attributes[] = {
-        GLX_RGBA,
-        GLX_DEPTH_SIZE, 24,
-        GLX_DOUBLEBUFFER,
-        None
+    m_display = XOpenDisplay(0);
+    if (!m_display)
+        throw FatalError("Couldn't connect to X server");
+
+    int attributes[] = {
+                GLX_DRAWABLE_TYPE, GLX_WINDOW_BIT,
+                GLX_DOUBLEBUFFER,  True,
+                GLX_RENDER_TYPE,
+                GLX_RGBA_BIT,
+                GLX_RED_SIZE,      1,
+                GLX_GREEN_SIZE,    1,
+                GLX_BLUE_SIZE,     1,
+                GLX_ALPHA_SIZE,    1,
+                GLX_TRANSPARENT_TYPE,
+                GLX_NONE,
+                None
     };
-    m_visualInfo = glXChooseVisual(m_display, 0, attributes);
 
+    int numReturned = 0;
+    GLXFBConfig* fbConfigs(glXChooseFBConfig(m_display, DefaultScreen(m_display), attributes, &numReturned));
+    if (!fbConfigs)
+        throw FatalError("No double buffered config available");
+
+    GLXFBConfig fbConfig = fbConfigs[0];
+    ScopedXFree x(fbConfigs);
+
+    m_visualInfo = glXGetVisualFromFBConfig(m_display, fbConfig);
     if (!m_visualInfo)
-        throw FatalError("glXChooseVisual() failed.");
+        throw FatalError("No appropriate visual found.");
 
-    return m_visualInfo->visualid;
-}
+    XSetWindowAttributes setAttributes;
+    setAttributes.colormap = XCreateColormap(m_display, DefaultRootWindow(m_display), m_visualInfo->visual, AllocNone);
+    setAttributes.event_mask = ExposureMask | KeyPressMask | KeyReleaseMask | ButtonPressMask | ButtonReleaseMask | StructureNotifyMask | PointerMotionMask;
+    m_window = XCreateWindow(m_display, DefaultRootWindow(m_display),
+                                0, 0, m_size.width, m_size.height, 0,
+                                m_visualInfo->depth, InputOutput, m_visualInfo->visual,
+                                CWColormap | CWEventMask, &setAttributes);
 
-void DesktopWindowLinux::createGLContext()
-{
-    m_context = glXCreateContext(m_display, m_visualInfo, 0, GL_TRUE);
+    wmDeleteMessageAtom = XInternAtom(m_display, "WM_DELETE_WINDOW", False);
+    XSetWMProtocols(m_display, m_window, &wmDeleteMessageAtom, 1);
+
+    XMapWindow(m_display, m_window);
+    XStoreName(m_display, m_window, "Drowser");
+
+    m_context = glXCreateNewContext(m_display, fbConfig, GLX_RGBA_TYPE, NULL, GL_TRUE);
     if (!m_context)
         throw FatalError("glXCreateContext() failed.");
 }
@@ -116,33 +148,6 @@ void DesktopWindowLinux::destroyGLContext()
     glXMakeCurrent(m_display, None, 0);
     glXDestroyContext(m_display, m_context);
     XFree(m_visualInfo);
-}
-
-Window DesktopWindowLinux::createXWindow(VisualID visualID)
-{
-    XVisualInfo visualInfoTemplate;
-    int visualInfoCount;
-    visualInfoTemplate.visualid = visualID;
-    XVisualInfo* visualInfo = XGetVisualInfo(m_display, VisualIDMask, &visualInfoTemplate, &visualInfoCount);
-    if (!visualInfo)
-        throw FatalError("Couldn't get X visual");
-
-    Window rootWindow = DefaultRootWindow(m_display);
-
-    XSetWindowAttributes setAttributes;
-    setAttributes.colormap = XCreateColormap(m_display, rootWindow, visualInfo->visual, AllocNone);
-    setAttributes.event_mask = ExposureMask | KeyPressMask | KeyReleaseMask | ButtonPressMask | ButtonReleaseMask | StructureNotifyMask | PointerMotionMask;
-
-    Window window = XCreateWindow(m_display, rootWindow, 0, 0, m_size.width, m_size.height, 0, visualInfo->depth, InputOutput, visualInfo->visual, CWColormap | CWEventMask, &setAttributes);
-    XFree(visualInfo);
-
-    wmDeleteMessageAtom = XInternAtom(m_display, "WM_DELETE_WINDOW", False);
-    XSetWMProtocols(m_display, window, &wmDeleteMessageAtom, 1);
-
-    XMapWindow(m_display, window);
-    XStoreName(m_display, window, "Browser");
-
-    return window;
 }
 
 static inline bool isKeypadKeysym(const KeySym symbol)

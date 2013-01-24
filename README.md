@@ -1,20 +1,24 @@
 Drowser
 =======
 
-A demo browser for WebKitNix, using its C and Nix::Platform APIs
+A desktop browser using WebKitNix, with example implementations of its Platform API.
+
 
 Compiling
 =========
 
-Drowser started as a pet project, so it uses other pet project as build
-system, to compile it you will need to have meique (http://www.meique.org)
-on your system, then:
+Make sure you have Nix and all their libraries installed and pkg-config can find them. The code
+also uses some C++11 features like range-based for loops, closures and variadic templates, so using
+GCC >= 4.7 will make your life easier.
 
     $ mkdir build
-    $ cd build && meique ..
+    $ cd build && cmake ..
+    $ make
 
-Make sure you have Nix and all their libraries installed and pkg-config can find them. The code
-also uses some C++11 features like foreach loops, closures and variadic templates, so using GCC >= 4.7 will
-make your life easier.
 
-Not happy with the build system choice? Write the e.g. cmake files and keep supporting them.
+Alternative build system: meique
+================================
+
+Drowser started as a pet project, and used other pet project as build system: meique
+(http://www.meique.org). The meique.lua files are the equivalent of CMakeLists.txt. They are kept
+for historical reasons and Hugo maintains them, so contributors don't need to worry about them.

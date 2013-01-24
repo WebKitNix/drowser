@@ -29,7 +29,7 @@ browserUi = CustomTarget:new("ui", function()
     os.execute("ln -sd "..browserUi:sourceDir().."images "..browserUi:buildDir().." 2> /dev/null")
 end)
 browser:addDependency(browserUi)
-browser:addCustomFlags("-Wall -std=c++11 -D'UI_SEARCH_PATH=\""..browser:sourceDir().."ui\"'")
+browser:addCustomFlags("-Wall -std=c++0x -D'UI_SEARCH_PATH=\""..browser:sourceDir().."ui\"'")
 browser:install("bin")
 browser:install([[
   ui/jquery-1.8.3.min.js

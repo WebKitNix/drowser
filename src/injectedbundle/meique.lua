@@ -1,3 +1,0 @@
-addSubdirectory("ui")
-addSubdirectory("page")
-

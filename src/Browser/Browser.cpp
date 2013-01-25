@@ -88,7 +88,8 @@ static std::string getUiFile()
 void Browser::initUi()
 {
     const std::string appPath = getApplicationPath();
-    WKStringRef wkStr = WKStringCreateWithUTF8CString((appPath + "/injectedbundle/ui/libUiBundle.so").c_str());
+    // FIXME Find a better way to find where the injected bundle is
+    WKStringRef wkStr = WKStringCreateWithUTF8CString((appPath + "/../UIInjectedBundle/libUiBundle.so").c_str());
     m_uiContext = WKContextCreateWithInjectedBundlePath(wkStr);
     WKRelease(wkStr);
     wkStr = WKStringCreateWithUTF8CString("Browser");
@@ -133,7 +134,7 @@ void Browser::initUi()
     WKRelease(wkUrl);
 
     // context used on all webpages.
-    wkStr = WKStringCreateWithUTF8CString((appPath + "/injectedbundle/page/libPageBundle.so").c_str());
+    wkStr = WKStringCreateWithUTF8CString((appPath + "/../ContentsInjectedBundle/libPageBundle.so").c_str());
     m_webContext = WKContextCreateWithInjectedBundlePath(wkStr);
     WKRelease(wkStr);
     wkStr = WKStringCreateWithUTF8CString("Web");

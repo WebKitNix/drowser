@@ -262,11 +262,12 @@ void Browser::onWindowSizeChange(WKSize size)
         return;
 
     NIXViewSetSize(m_uiView, size);
-    if (m_currentTab != -1) {
-        size.height -= m_toolBarHeight;
-        NIXViewSetSize(currentTab()->webView(), size);
-    }
-    scheduleUpdateDisplay();
+
+    // FIXME: Procrastinate this relayout on non visible tabs
+    WKSize contentsSize = m_window->size();
+    contentsSize.height -= m_toolBarHeight;
+    for (auto p : m_tabs)
+        p.second->setSize(contentsSize);
 }
 
 void Browser::onWindowClose()

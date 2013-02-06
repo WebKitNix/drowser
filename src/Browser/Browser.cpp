@@ -323,12 +323,13 @@ void Browser::toolBarHeightChanged(const int& height)
     m_webViewsTransform = NIXMatrixMakeTranslation(0, m_toolBarHeight);
 
     // FIXME: Better to delay this global relayout in a near future
-    WKSize newSize = m_window->size();
-    newSize.height -= m_toolBarHeight;
+    WKSize contentsSize = m_window->size();
+    contentsSize.height -= m_toolBarHeight;
+
     for (auto p : m_tabs) {
         Tab* tab = p.second;
         tab->setViewportTransformation(&m_webViewsTransform);
-        tab->setSize(newSize);
+        tab->setSize(contentsSize);
     }
 }
 

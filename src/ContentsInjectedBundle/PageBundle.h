@@ -28,7 +28,7 @@
 
 #include <WebKit2/WKBundle.h>
 
-class GamepadsHandler;
+class PlatformClient;
 
 class PageBundle
 {
@@ -38,7 +38,7 @@ public:
 
 private:
     WKBundleRef m_bundle;
-    GamepadsHandler* m_gamepadsHandler;
+    PlatformClient* m_platformClient;
 };
 
 #endif

@@ -20,4 +20,4 @@ link_directories(
 
 add_subdirectory(Browser)
 add_subdirectory(UIInjectedBundle)
-# add_subdirectory(ContentsInjectedBundle)
+add_subdirectory(ContentsInjectedBundle)

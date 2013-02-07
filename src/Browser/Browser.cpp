@@ -167,6 +167,7 @@ void Browser::initUi()
     WKRelease(wkStr);
     WKPreferencesRef webPreferences = WKPageGroupGetPreferences(m_webPageGroup);
     WKPreferencesSetAcceleratedCompositingEnabled(webPreferences, true);
+    WKPreferencesSetWebAudioEnabled(webPreferences, true);
 }
 
 int Browser::run()

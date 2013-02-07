@@ -24,7 +24,7 @@
  */
 
 #include "PageBundle.h"
-#include "gamepad/Gamepad.h"
+#include "PlatformClient.h"
 
 // I don't care about windows or gcc < 4.x right now.
 #define UIBUNDLE_EXPORT __attribute__ ((visibility("default")))
@@ -42,11 +42,11 @@ UIBUNDLE_EXPORT void WKBundleInitialize(WKBundleRef bundle, WKTypeRef initializa
 PageBundle::PageBundle(WKBundleRef bundle)
     : m_bundle(bundle)
 {
-    m_gamepadsHandler = new GamepadsHandler();
-    Nix::Platform::setGamepadClient(m_gamepadsHandler);
+    m_platformClient = new PlatformClient();
+    WebKit::Platform::initialize(m_platformClient);
 }
 
 PageBundle::~PageBundle()
 {
-    delete m_gamepadsHandler;
+    delete m_platformClient;
 }

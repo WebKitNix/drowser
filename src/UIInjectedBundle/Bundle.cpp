@@ -132,10 +132,8 @@ void Bundle::callJSFunction(JSStringRef name, const std::vector<JSValueRef>& arg
 {
     JSValueRef rawFunc = JSObjectGetProperty(m_jsContext, m_windowObj, name, 0);
     if (JSValueIsUndefined(m_jsContext, rawFunc)) {
-        std::string buffer;
-        buffer.resize(64);
-        int size = JSStringGetUTF8CString(name, &buffer[0], buffer.length());
-        buffer.resize(size - 1);
+        char buffer[64];
+        JSStringGetUTF8CString(name, buffer, sizeof(buffer));
         std::cerr << "Can't find JS function " << buffer << std::endl;
         return;
     }

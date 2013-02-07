@@ -43,28 +43,29 @@
 // I don't care about windows or gcc < 4.x right now.
 #define UIBUNDLE_EXPORT __attribute__ ((visibility("default")))
 
-extern "C" {
-
 static Bundle* gBundle = 0;
 
+extern "C" {
 UIBUNDLE_EXPORT void WKBundleInitialize(WKBundleRef bundle, WKTypeRef initializationUserData)
 {
     gBundle = new Bundle(bundle);
 }
-
-static JSValueRef jsGenericCallback(JSContextRef ctx, JSObjectRef func, JSObjectRef thisObject, size_t argumentCount, const JSValueRef arguments[], JSValueRef* exception)
-{
-    return gBundle->jsGenericCallback(ctx, func, thisObject, argumentCount, arguments, exception);
-}
-
 } // "extern C"
 
-static WKStringRef JSValueRefToWKStringRef(JSContextRef ctx, JSValueRef value)
+Bundle::Bundle(WKBundleRef bundle)
+    : m_bundle(bundle)
+    , m_jsContext(0)
+    , m_windowObj(0)
 {
-    JSStringRef str = JSValueToStringCopy(ctx, value, 0);
-    WKStringRef result = WKStringCreateWithJSString(str);
-    JSStringRelease(str);
-    return result;
+    WKBundleClient client;
+    std::memset(&client, 0, sizeof(WKBundleClient));
+
+    client.version = kWKBundleClientCurrentVersion;
+    client.clientInfo = this;
+    client.didCreatePage = &Bundle::didCreatePage;
+    client.didReceiveMessageToPage = &Bundle::didReceiveMessageToPage;
+
+    WKBundleSetClient(bundle, &client);
 }
 
 static void didClearWindowForFrame(WKBundlePageRef page, WKBundleFrameRef frame, WKBundleScriptWorldRef world, const void *clientInfo)
@@ -72,7 +73,9 @@ static void didClearWindowForFrame(WKBundlePageRef page, WKBundleFrameRef frame,
     JSGlobalContextRef context = WKBundleFrameGetJavaScriptContextForWorld(frame, world);
 
     Bundle* bundle = ((Bundle*)clientInfo);
-    bundle->setJSGlobalContext(context);
+    bundle->m_jsContext = context;
+    bundle->m_windowObj = JSContextGetGlobalObject(context);
+
     bundle->registerAPI();
 }
 
@@ -93,24 +96,9 @@ void Bundle::didCreatePage(WKBundleRef, WKBundlePageRef page, const void* client
     WKBundlePageSetUIClient(page, &uiClient);
 }
 
-Bundle::Bundle(WKBundleRef bundle)
-    : m_bundle(bundle)
+void Bundle::didReceiveMessageToPage(WKBundleRef, WKBundlePageRef, WKStringRef name, WKTypeRef messageBody, const void*)
 {
-    WKBundleClient client;
-    std::memset(&client, 0, sizeof(WKBundleClient));
-
-    client.version = kWKBundleClientCurrentVersion;
-    client.clientInfo = this;
-    client.didCreatePage = &Bundle::didCreatePage;
-    client.didReceiveMessageToPage = &Bundle::didReceiveMessageToPage;
-
-    WKBundleSetClient(bundle, &client);
-}
-
-void Bundle::setJSGlobalContext(JSGlobalContextRef context)
-{
-    m_jsContext = context;
-    m_windowObj = JSContextGetGlobalObject(m_jsContext);
+    gBundle->callJSFunction(WKStringCopyJSString(name), gBundle->toJSVector(messageBody));
 }
 
 void Bundle::registerAPI()
@@ -135,48 +123,65 @@ void Bundle::registerJSFunction(const char* name)
 {
     JSStringRef funcName = JSStringCreateWithUTF8CString(name);
 
-    JSObjectRef jsFunc = JSObjectMakeFunctionWithCallback(m_jsContext, funcName, ::jsGenericCallback);
+    JSObjectRef jsFunc = JSObjectMakeFunctionWithCallback(m_jsContext, funcName, jsGenericCallback);
     JSObjectSetProperty(m_jsContext, m_windowObj, funcName, jsFunc, kJSPropertyAttributeReadOnly | kJSPropertyAttributeDontDelete, 0);
     JSStringRelease(funcName);
 }
 
-void Bundle::callJSFunction(const char* name, int numArgs, JSValueRef* args)
+void Bundle::callJSFunction(JSStringRef name, const std::vector<JSValueRef>& args)
 {
-    JSStringRef funcName = JSStringCreateWithUTF8CString(name);
-    JSValueRef rawFunc = JSObjectGetProperty(m_jsContext, m_windowObj, funcName, 0);
+    JSValueRef rawFunc = JSObjectGetProperty(m_jsContext, m_windowObj, name, 0);
+    if (JSValueIsUndefined(m_jsContext, rawFunc)) {
+        std::string buffer;
+        buffer.resize(64);
+        int size = JSStringGetUTF8CString(name, &buffer[0], buffer.length());
+        buffer.resize(size - 1);
+        std::cerr << "Can't find JS function " << buffer << std::endl;
+        return;
+    }
     JSObjectRef func = JSValueToObject(m_jsContext, rawFunc, 0);
-    JSObjectCallAsFunction(m_jsContext, func, m_windowObj, numArgs, numArgs ? args : 0, 0);
-    JSStringRelease(funcName);
+    JSObjectCallAsFunction(m_jsContext, func, m_windowObj, args.size(), args.size() ? args.data() : 0, 0);
 }
 
-void Bundle::didReceiveMessageToPage(WKBundleRef, WKBundlePageRef, WKStringRef name, WKTypeRef messageBody, const void*)
+JSValueRef Bundle::toJS(WKTypeRef wktype)
 {
-    // FIXME: Put some order on this mess, because it will grow a lot
-    if (WKStringIsEqualToUTF8CString(name, "progressChanged")) {
-        JSValueRef args[2];
-        args[0] = JSValueMakeNumber(gBundle->m_jsContext, fromWK<int>(WKArrayGetItemAtIndex((WKArrayRef)messageBody, 0)));
-        args[1] = JSValueMakeNumber(gBundle->m_jsContext, fromWK<double>(WKArrayGetItemAtIndex((WKArrayRef)messageBody, 1)));
-        gBundle->callJSFunction("progressChanged", 2, args);
-    } else if (WKStringIsEqualToUTF8CString(name, "progressStarted")) {
-        JSValueRef arg = JSValueMakeNumber(gBundle->m_jsContext, fromWK<int>(messageBody));
-        gBundle->callJSFunction("progressStarted", 1, &arg);
-    } else if (WKStringIsEqualToUTF8CString(name, "progressFinished")) {
-        JSValueRef arg = JSValueMakeNumber(gBundle->m_jsContext, fromWK<int>(messageBody));
-        gBundle->callJSFunction("progressFinished", 1, &arg);
-    } else if (WKStringIsEqualToUTF8CString(name, "titleChanged")) {
-
-        int arg0 = fromWK<int>(WKArrayGetItemAtIndex((WKArrayRef)messageBody, 0));
-        JSStringRef arg1 = WKStringCopyJSString((WKStringRef)WKArrayGetItemAtIndex((WKArrayRef)messageBody, 1));
-
-        JSValueRef args[2];
-        args[0] = JSValueMakeNumber(gBundle->m_jsContext, arg0);
-        args[1] = JSValueMakeString(gBundle->m_jsContext, arg1); // We must copy the string to current JS context.
-
-        gBundle->callJSFunction("titleChanged", 2, args);
-        JSStringRelease(arg1);
+    WKTypeID tid = WKGetTypeID(wktype);
+    if (tid == WKDoubleGetTypeID()) {
+        return JSValueMakeNumber(gBundle->m_jsContext, WKDoubleGetValue((WKDoubleRef)wktype));
+    } else if (tid == WKUInt64GetTypeID()) {
+        return JSValueMakeNumber(gBundle->m_jsContext, WKUInt64GetValue((WKUInt64Ref)wktype));
+    } else if (tid == WKStringGetTypeID()) {
+        JSStringRef str = WKStringCopyJSString((WKStringRef)wktype);
+        JSValueRef jsValue = JSValueMakeString(gBundle->m_jsContext, str);
+        WKRelease(str);
+        return jsValue;
     } else {
-        puts("unknow message form Ui");
+        std::cerr << "Unknown WKTypeID" << std::endl;
+        return 0;
     }
+}
+
+std::vector<JSValueRef> Bundle::toJSVector(WKTypeRef wktype)
+{
+    if (WKGetTypeID(wktype) != WKArrayGetTypeID())
+        return { toJS(wktype) };
+
+    WKArrayRef array = (WKArrayRef) wktype;
+    int size = WKArrayGetSize(array);
+    std::vector<JSValueRef> result(size);
+
+    for (int i = 0; i < size; ++i)
+        result[i] = toJS(WKArrayGetItemAtIndex(array, i));
+
+    return result;
+}
+
+static WKStringRef JSValueRefToWKStringRef(JSContextRef ctx, JSValueRef value)
+{
+    JSStringRef str = JSValueToStringCopy(ctx, value, 0);
+    WKStringRef result = WKStringCreateWithJSString(str);
+    JSStringRelease(str);
+    return result;
 }
 
 JSValueRef Bundle::jsGenericCallback(JSContextRef ctx, JSObjectRef func, JSObjectRef thisObject, size_t argumentCount, const JSValueRef arguments[], JSValueRef*) {
@@ -203,7 +208,7 @@ JSValueRef Bundle::jsGenericCallback(JSContextRef ctx, JSObjectRef func, JSObjec
     JSStringRelease(propName);
 
     WKStringRef funcName = JSValueRefToWKStringRef(ctx, propValue);
-    WKBundlePostMessage(m_bundle, funcName, param);
+    WKBundlePostMessage(gBundle->m_bundle, funcName, param);
     if (param)
         WKRelease(param);
     WKRelease(funcName);

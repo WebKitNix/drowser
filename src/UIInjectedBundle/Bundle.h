@@ -27,17 +27,17 @@
 #define Bundle_h
 
 #include <WebKit2/WKBundle.h>
+#include <vector>
 
 class Bundle
 {
 public:
     Bundle(WKBundleRef);
 
-    void setJSGlobalContext(JSGlobalContextRef context);
     void registerAPI();
 
-    void callJSFunction(const char *name, int numArgs = 0, JSValueRef* args = 0);
-    JSValueRef jsGenericCallback(JSContextRef ctx, JSObjectRef func, JSObjectRef thisObject, size_t argumentCount, const JSValueRef arguments[], JSValueRef*);
+    void callJSFunction(JSStringRef name, const std::vector<JSValueRef>& args);
+    static JSValueRef jsGenericCallback(JSContextRef ctx, JSObjectRef func, JSObjectRef thisObject, size_t argumentCount, const JSValueRef arguments[], JSValueRef*);
 
 private:
     WKBundleRef m_bundle;
@@ -45,6 +45,8 @@ private:
     JSObjectRef m_windowObj;
 
     void registerJSFunction(const char* name);
+    static JSValueRef toJS(WKTypeRef wktype);
+    std::vector<JSValueRef> toJSVector(WKTypeRef wktype);
 
     // Bundle client
     static void didCreatePage(WKBundleRef, WKBundlePageRef page, const void* clientInfo);

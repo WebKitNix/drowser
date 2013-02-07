@@ -10,6 +10,8 @@ browser:addFiles([[
   DesktopWindow.cpp
   InjectedBundleGlue.cpp
   Tab.cpp
+
+  ../Shared/WKConversions.cpp
 ]])
 
 UNIX:browser:addFiles([[
@@ -17,6 +19,7 @@ UNIX:browser:addFiles([[
   x11/XlibEventSource.cpp
 ]])
 
+browser:addIncludePath("../Shared")
 browser:addCustomFlags("-Wall -std=c++0x -D'UI_SEARCH_PATH=\""..browser:sourceDir().."ui\"'")
 
 -- Install routines

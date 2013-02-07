@@ -1,5 +1,6 @@
 set(UiBundle_SOURCES
   Bundle.cpp
+  ../Shared/WKConversions.cpp
 )
 
 set(UiBundle_LIBRARIES

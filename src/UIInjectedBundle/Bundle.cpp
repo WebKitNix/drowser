@@ -33,9 +33,12 @@
 #include <WebKit2/WKStringPrivate.h>
 #include <WebKit2/WKType.h>
 #include <WebKit2/WKArray.h>
+#include "WKConversions.h"
 #include <cstdio>
 #include <cstring>
 #include <cassert>
+#include <iostream>
+#include <string>
 
 // I don't care about windows or gcc < 4.x right now.
 #define UIBUNDLE_EXPORT __attribute__ ((visibility("default")))
@@ -151,18 +154,18 @@ void Bundle::didReceiveMessageToPage(WKBundleRef, WKBundlePageRef, WKStringRef n
     // FIXME: Put some order on this mess, because it will grow a lot
     if (WKStringIsEqualToUTF8CString(name, "progressChanged")) {
         JSValueRef args[2];
-        args[0] = JSValueMakeNumber(gBundle->m_jsContext, WKUInt64GetValue((WKUInt64Ref)WKArrayGetItemAtIndex((WKArrayRef)messageBody, 0)));
-        args[1] = JSValueMakeNumber(gBundle->m_jsContext, WKDoubleGetValue((WKDoubleRef)WKArrayGetItemAtIndex((WKArrayRef)messageBody, 1)));
+        args[0] = JSValueMakeNumber(gBundle->m_jsContext, fromWK<int>(WKArrayGetItemAtIndex((WKArrayRef)messageBody, 0)));
+        args[1] = JSValueMakeNumber(gBundle->m_jsContext, fromWK<double>(WKArrayGetItemAtIndex((WKArrayRef)messageBody, 1)));
         gBundle->callJSFunction("progressChanged", 2, args);
     } else if (WKStringIsEqualToUTF8CString(name, "progressStarted")) {
-        JSValueRef arg = JSValueMakeNumber(gBundle->m_jsContext, WKUInt64GetValue((WKUInt64Ref)messageBody));
+        JSValueRef arg = JSValueMakeNumber(gBundle->m_jsContext, fromWK<int>(messageBody));
         gBundle->callJSFunction("progressStarted", 1, &arg);
     } else if (WKStringIsEqualToUTF8CString(name, "progressFinished")) {
-        JSValueRef arg = JSValueMakeNumber(gBundle->m_jsContext, WKUInt64GetValue((WKUInt64Ref)messageBody));
+        JSValueRef arg = JSValueMakeNumber(gBundle->m_jsContext, fromWK<int>(messageBody));
         gBundle->callJSFunction("progressFinished", 1, &arg);
     } else if (WKStringIsEqualToUTF8CString(name, "titleChanged")) {
 
-        uint64_t arg0 = WKUInt64GetValue((WKUInt64Ref)WKArrayGetItemAtIndex((WKArrayRef)messageBody, 0));
+        int arg0 = fromWK<int>(WKArrayGetItemAtIndex((WKArrayRef)messageBody, 0));
         JSStringRef arg1 = WKStringCopyJSString((WKStringRef)WKArrayGetItemAtIndex((WKArrayRef)messageBody, 1));
 
         JSValueRef args[2];
@@ -210,9 +213,6 @@ JSValueRef Bundle::jsGenericCallback(JSContextRef ctx, JSObjectRef func, JSObjec
 
 void Bundle::willRunJavaScriptAlert(WKBundlePageRef, WKStringRef alertText, WKBundleFrameRef, const void*)
 {
-    size_t size = WKStringGetMaximumUTF8CStringSize(alertText);
-    char* buffer = new char[size + 1];
-    WKStringGetUTF8CString(alertText, buffer, size);
-    printf("ALERT: %s\n", buffer);
-    delete[] buffer;
+    std::string text = fromWK<std::string>(alertText);
+    std::cout << "ALERT: " << text << std::endl;
 }

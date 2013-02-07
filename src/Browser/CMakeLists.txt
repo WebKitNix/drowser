@@ -14,6 +14,8 @@ set(drowser_SOURCES
   InjectedBundleGlue.cpp
   Tab.cpp
 
+  ../Shared/WKConversions.cpp
+
   x11/DesktopWindowLinux.cpp
   x11/XlibEventSource.cpp
 )

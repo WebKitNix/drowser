@@ -1,4 +1,8 @@
 
 uiBundle = Library:new("UiBundle")
 uiBundle:usePackage(nix)
-uiBundle:addFiles("Bundle.cpp")
+uiBundle:addIncludePath("../Shared")
+uiBundle:addFiles([[
+    Bundle.cpp
+    ../Shared/WKConversions.cpp
+]])

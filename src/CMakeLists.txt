@@ -10,6 +10,7 @@ include_directories(
   ${GLIB_INCLUDE_DIRS}
   ${X11_INCLUDE_DIR}
   ${OPENGL_INCLUDE_DIR}
+  "Shared"
 )
 
 link_directories(

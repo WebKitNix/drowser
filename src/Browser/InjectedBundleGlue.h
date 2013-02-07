@@ -30,18 +30,11 @@
 #include <unordered_map>
 #include <string>
 #include <WebKit2/WKContext.h>
-#include <WebKit2/WKString.h>
-#include <WebKit2/WKType.h>
 #include <WebKit2/WKPage.h>
 #include <WebKit2/WKMutableArray.h>
+#include <WebKit2/WKString.h>
+#include "WKConversions.h"
 
-template<typename T>
-T fromWK(WKTypeRef);
-
-template<typename T>
-WKTypeRef toWK(const T&);
-template<>
-inline WKTypeRef toWK<WKStringRef>(const WKStringRef& value) { return value; }
 inline WKTypeRef createArg() { return 0; }
 inline WKTypeRef createArg(const WKTypeRef& value) { return value; }
 

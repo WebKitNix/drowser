@@ -30,30 +30,36 @@ extern "C" {
 #include <libudev.h>
 }
 
-#include <glib.h>
-#include <Platform/NixPlatform.h>
+#include <gio/gunixinputstream.h>
+#include <NixPlatform/Platform.h>
 
 #include <map>
-
-#define MAX_GAMEPAD_DEVICES 4
+#include <string>
+#include <vector>
 
 class GamepadDevice;
 
-class GamepadsHandler : public Nix::Platform::GamepadClient {
+class GamepadController {
 public:
-    GamepadsHandler();
-    ~GamepadsHandler();
+    static GamepadController* create();
+    ~GamepadController();
 
-    virtual Nix::Platform::GamepadDevice* getGamepad(int index);
+    void sampleGamepads(WebKit::WebGamepads&);
 
 private:
+    GamepadController();
 
-    void registerDevice(const char* deviceFile);
-    void unregisterDevice(const char* deviceFile);
-    static bool isGamepadDevice(struct udev_device*);
+    void registerDevice(const char*);
+    void unregisterDevice(const char*);
+
+    static gboolean isGamepadDevice(struct udev_device*);
     static gboolean onGamepadChange(GIOChannel*, GIOCondition, gpointer);
 
-    std::vector<GamepadDevice*> m_gamepads;
+    // gamepad abstraction
+    WebKit::WebGamepads m_gamepads;
+
+    // actual gamepad device (/dev/*)
+    std::vector<GamepadDevice*> m_gamepadDevices;
     std::map<std::string, unsigned> m_deviceMap;
 
     struct udev* m_udev;

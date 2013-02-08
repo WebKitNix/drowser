@@ -25,48 +25,51 @@
 
 #include "Gamepad.h"
 
+#include <glib.h>
+
+#include <algorithm>
 #include <cstdio>
+#include <cstring>
 #include <fcntl.h>
 #include <linux/joystick.h>
 #include <stdint.h>
-#include <gio/gunixinputstream.h>
 
 class GamepadDevice {
 public:
-    static GamepadDevice* create(const char* deviceFile);
+    static GamepadDevice* create(const char*, WebKit::WebGamepad*);
     ~GamepadDevice();
 
     void updateForEvent(struct js_event);
-    Nix::Platform::GamepadDevice* getGamepadDevice() { return m_gamepadDeviceNix; }
+    WebKit::WebGamepad* device() { return m_nixGamepad; }
 
 private:
-    GamepadDevice(int fd);
+    GamepadDevice(int, WebKit::WebGamepad*);
     static gboolean readCallback(GObject* pollableStream, gpointer data);
 
     int m_fileDescriptor;
-    Nix::Platform::GamepadDevice* m_gamepadDeviceNix;
+    WebKit::WebGamepad* m_nixGamepad;
     GInputStream* m_inputStream;
     GSource* m_source;
 };
 
-GamepadDevice* GamepadDevice::create(const char* deviceFile)
+GamepadDevice* GamepadDevice::create(const char* deviceFile, WebKit::WebGamepad* gamepad)
 {
     int fd = open(deviceFile, O_RDONLY | O_NONBLOCK);
 
     if (fd == -1)
         return 0;
 
-    return new GamepadDevice(fd);
+    return new GamepadDevice(fd, gamepad);
 }
 
-GamepadDevice::GamepadDevice(int fd)
+GamepadDevice::GamepadDevice(int fd, WebKit::WebGamepad* gamepad)
     : m_fileDescriptor(fd)
-    , m_gamepadDeviceNix(0)
+    , m_nixGamepad(gamepad)
     , m_inputStream(0)
     , m_source(0)
 {
-    char deviceName[1024];
-    if (ioctl(m_fileDescriptor, JSIOCGNAME(sizeof(deviceName)), deviceName) < 0)
+    char deviceId[WebKit::WebGamepad::idLengthCap];
+    if (ioctl(m_fileDescriptor, JSIOCGNAME(sizeof(deviceId)), deviceId) < 0)
         return;
 
     uint8_t numberOfAxes;
@@ -74,14 +77,28 @@ GamepadDevice::GamepadDevice(int fd)
     if (ioctl(m_fileDescriptor, JSIOCGAXES, &numberOfAxes) < 0 || ioctl(m_fileDescriptor, JSIOCGBUTTONS, &numberOfButtons) < 0)
         return;
 
-    m_gamepadDeviceNix = new Nix::Platform::GamepadDevice;
-    m_gamepadDeviceNix->id = std::string(deviceName);
-    m_gamepadDeviceNix->connected = false;
-    m_gamepadDeviceNix->lastTimestamp = 0;
-    std::vector<float> axes(numberOfAxes, 0.0);
-    std::vector<float> buttons(numberOfButtons, 0.0);
-    m_gamepadDeviceNix->axes = axes;
-    m_gamepadDeviceNix->buttons = buttons;
+    memset(m_nixGamepad->id, 0, WebKit::WebGamepad::idLengthCap);
+
+    gsize bytesWritten, bytesRead;
+    GError* error = 0;
+    gchar* deviceIdUTF16 = g_convert(deviceId, -1, "UTF-16", "ASCII", &bytesRead, &bytesWritten, &error);
+
+    if (!error) {
+        memcpy(m_nixGamepad->id, deviceIdUTF16, bytesWritten);
+        g_free(deviceIdUTF16);
+    } else
+        g_error_free(error);
+
+    m_nixGamepad->connected = false;
+    m_nixGamepad->timestamp = 0;
+    m_nixGamepad->axesLength = std::min<unsigned>(numberOfAxes, WebKit::WebGamepad::axesLengthCap);
+    m_nixGamepad->buttonsLength = std::min<unsigned>(numberOfButtons, WebKit::WebGamepad::buttonsLengthCap);
+
+    unsigned i, total;
+    for (i = 0, total = m_nixGamepad->axesLength; i < total; i++)
+        m_nixGamepad->axes[i] = 0;
+    for (i = 0, total = m_nixGamepad->buttonsLength; i < total; i++)
+        m_nixGamepad->buttons[i] = 0;
 
     m_inputStream = g_unix_input_stream_new(m_fileDescriptor, FALSE);
     m_source = g_pollable_input_stream_create_source(G_POLLABLE_INPUT_STREAM(m_inputStream), 0);
@@ -99,8 +116,8 @@ GamepadDevice::~GamepadDevice()
     if (m_inputStream)
         g_input_stream_close(m_inputStream, 0, 0);
 
-    if (m_gamepadDeviceNix)
-        delete m_gamepadDeviceNix;
+    // XXX: maybe there is a cleaner way to do this?
+    memset(m_nixGamepad, 0, sizeof(WebKit::WebGamepad));
 }
 
 gboolean GamepadDevice::readCallback(GObject* pollableStream, gpointer data)
@@ -110,15 +127,17 @@ gboolean GamepadDevice::readCallback(GObject* pollableStream, gpointer data)
     GError* error = 0;
     struct js_event event;
 
-    gssize len = g_pollable_input_stream_read_nonblocking(G_POLLABLE_INPUT_STREAM(pollableStream),
-                                                          &event, sizeof(event), 0, &error);
+    g_pollable_input_stream_read_nonblocking(G_POLLABLE_INPUT_STREAM(pollableStream),
+                                             &event, sizeof(event), 0, &error);
 
-    if (error)
-        return g_error_matches(error, G_IO_ERROR, G_IO_ERROR_WOULD_BLOCK);
+    if (error) {
+        gboolean ret = g_error_matches(error, G_IO_ERROR, G_IO_ERROR_WOULD_BLOCK);
+        g_error_free(error);
+        return ret;
+    }
 
     gamepadDevice->updateForEvent(event);
 
-    delete error;
     return TRUE;
 }
 
@@ -144,19 +163,21 @@ void GamepadDevice::updateForEvent(struct js_event event)
     // Mark the device as connected only if it is not yet connected, the event is not an initialization
     // and the value is not 0 (indicating a genuine interaction with the device).
 
-    if (!m_gamepadDeviceNix->connected && !(event.type & JS_EVENT_INIT) && event.value)
-        m_gamepadDeviceNix->connected = true;
+    if (!m_nixGamepad->connected && !(event.type & JS_EVENT_INIT) && event.value)
+        m_nixGamepad->connected = true;
 
-    if (event.type & JS_EVENT_AXIS)
-        m_gamepadDeviceNix->axes[event.number] = normalizeAxisValue(event.value);
-    else if (event.type & JS_EVENT_BUTTON)
-        m_gamepadDeviceNix->buttons[event.number] = normalizeButtonValue(event.value);
+    if (event.type & JS_EVENT_AXIS && event.number < WebKit::WebGamepad::axesLengthCap)
+        m_nixGamepad->axes[event.number] = normalizeAxisValue(event.value);
+    else if (event.type & JS_EVENT_BUTTON && event.number < WebKit::WebGamepad::buttonsLengthCap)
+        m_nixGamepad->buttons[event.number] = normalizeButtonValue(event.value);
 
-    m_gamepadDeviceNix->lastTimestamp = event.time;
+    m_nixGamepad->timestamp = event.time;
 }
 
-GamepadsHandler::GamepadsHandler()
-    : m_gamepads(MAX_GAMEPAD_DEVICES)
+//-------------- end of GamepadDevice
+
+GamepadController::GamepadController()
+    : m_gamepadDevices(WebKit::WebGamepads::itemsLengthCap)
 {
     m_udev = udev_new();
     m_gamepadsMonitor = udev_monitor_new_from_netlink(m_udev, "udev");
@@ -165,7 +186,7 @@ GamepadsHandler::GamepadsHandler()
     udev_monitor_filter_add_match_subsystem_devtype(m_gamepadsMonitor, "input", 0);
 
     GIOChannel *channel = g_io_channel_unix_new(udev_monitor_get_fd(m_gamepadsMonitor));
-    g_io_add_watch(channel, GIOCondition(G_IO_IN), static_cast<GIOFunc>(&GamepadsHandler::onGamepadChange), this);
+    g_io_add_watch(channel, GIOCondition(G_IO_IN), static_cast<GIOFunc>(&GamepadController::onGamepadChange), this);
     g_io_channel_unref(channel);
 
     struct udev_enumerate* enumerate = udev_enumerate_new(m_udev);
@@ -185,32 +206,34 @@ GamepadsHandler::GamepadsHandler()
     udev_enumerate_unref(enumerate);
 }
 
-GamepadsHandler::~GamepadsHandler()
+GamepadController::~GamepadController()
 {
     udev_unref(m_udev);
     udev_monitor_unref(m_gamepadsMonitor);
 
-    // FIXME: perhaps the correct approach here would to check if the current gamepadClient
-    // is this handler or not.
-    Nix::Platform::setGamepadClient(0);
+    for (unsigned i = 0; i <= m_gamepadDevices.size(); i++)
+        delete m_gamepadDevices[i];
 
-    for (unsigned i = 0; i <= m_gamepads.size(); i++)
-        delete m_gamepads[i];
-    m_gamepads.clear();
+    m_gamepadDevices.clear();
 }
 
-void GamepadsHandler::registerDevice(const char* deviceFile)
+GamepadController* GamepadController::create()
 {
-    for (unsigned index = 0; index < m_gamepads.size(); index++) {
-        if (!m_gamepads[index]) {
-            m_gamepads[index] = GamepadDevice::create(deviceFile);
-            m_deviceMap.insert(std::pair<std::string, unsigned>(std::string(deviceFile), index));
+    return new GamepadController();
+}
+
+void GamepadController::registerDevice(const char* deviceFile)
+{
+    for (unsigned index = 0; index < m_gamepadDevices.size(); index++) {
+        if (!m_gamepadDevices[index]) {
+            m_gamepadDevices[index] = GamepadDevice::create(deviceFile, &m_gamepads.items[index]);
+            m_deviceMap.insert(std::make_pair(std::string(deviceFile), index));
             break;
         }
     }
 }
 
-void GamepadsHandler::unregisterDevice(const char* deviceFile)
+void GamepadController::unregisterDevice(const char* deviceFile)
 {
     std::string key(deviceFile);
     std::map<std::string, unsigned>::iterator it;
@@ -222,13 +245,13 @@ void GamepadsHandler::unregisterDevice(const char* deviceFile)
 
     m_deviceMap.erase(it);
 
-    delete m_gamepads[index];
-    m_gamepads[index] = 0;
+    delete m_gamepadDevices[index];
+    m_gamepadDevices[index] = 0;
 }
 
-gboolean GamepadsHandler::onGamepadChange(GIOChannel* source, GIOCondition condition, gpointer data)
+gboolean GamepadController::onGamepadChange(GIOChannel* source, GIOCondition condition, gpointer data)
 {
-    GamepadsHandler* handler = static_cast<GamepadsHandler*>(data);
+    GamepadController* handler = static_cast<GamepadController*>(data);
 
     if (!handler->m_gamepadsMonitor)
         return TRUE;
@@ -249,7 +272,7 @@ gboolean GamepadsHandler::onGamepadChange(GIOChannel* source, GIOCondition condi
     return TRUE;
 }
 
-bool GamepadsHandler::isGamepadDevice(struct udev_device* device)
+gboolean GamepadController::isGamepadDevice(struct udev_device* device)
 {
     const char* deviceFile = udev_device_get_devnode(device);
     const char* sysfsPath = udev_device_get_syspath(device);
@@ -263,10 +286,11 @@ bool GamepadsHandler::isGamepadDevice(struct udev_device* device)
     return g_str_has_prefix(deviceFile, "/dev/input/js");
 }
 
-Nix::Platform::GamepadDevice* GamepadsHandler::getGamepad(int index)
+void GamepadController::sampleGamepads(WebKit::WebGamepads& into)
 {
-    if (index < 0 || index >= m_gamepads.size() || !m_gamepads[index])
-        return 0;
+    for (unsigned i = 0; i < WebKit::WebGamepads::itemsLengthCap; ++i)
+        memcpy(&into.items[i], &m_gamepads.items[i], sizeof(m_gamepads.items[i]));
 
-    return m_gamepads[index]->getGamepadDevice();
+    into.length = m_gamepadDevices.size();
 }
+

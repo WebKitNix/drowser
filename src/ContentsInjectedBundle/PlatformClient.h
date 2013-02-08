@@ -3,6 +3,8 @@
 
 #include <NixPlatform/Platform.h>
 
+class GamepadController;
+
 class PlatformClient : public WebKit::Platform {
 public:
     PlatformClient();
@@ -23,6 +25,13 @@ public:
     // A sample-rate conversion to sampleRate will occur if the file data is at a different sample-rate.
     // Returns true on success.
     virtual bool loadAudioResource(WebKit::WebAudioBus* destinationBus, const char* audioFileData, size_t dataSize, double sampleRate);
+
+    // Gamepad
+    virtual void sampleGamepads(WebKit::WebGamepads& into);
+private:
+    // Gamepad
+    void initializeGamepadController();
+    GamepadController* m_gamepadController;
 };
 
 #endif

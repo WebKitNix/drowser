@@ -8,6 +8,7 @@ include_directories(
 )
 
 set(gamepad_SOURCES
+  PlatformClientGamepad.cpp
   Gamepad.cpp
 )
 

@@ -7,4 +7,5 @@ extern bool initializeAudioBackend();
 PlatformClient::PlatformClient()
 {
     initializeAudioBackend();
+    initializeGamepadController();
 }

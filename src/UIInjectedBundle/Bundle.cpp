@@ -68,7 +68,7 @@ Bundle::Bundle(WKBundleRef bundle)
     WKBundleSetClient(bundle, &client);
 }
 
-static void didClearWindowForFrame(WKBundlePageRef page, WKBundleFrameRef frame, WKBundleScriptWorldRef world, const void *clientInfo)
+void Bundle::didClearWindowForFrame(WKBundlePageRef page, WKBundleFrameRef frame, WKBundleScriptWorldRef world, const void *clientInfo)
 {
     JSGlobalContextRef context = WKBundleFrameGetJavaScriptContextForWorld(frame, world);
 
@@ -85,7 +85,7 @@ void Bundle::didCreatePage(WKBundleRef, WKBundlePageRef page, const void* client
     std::memset(&loaderClient, 0, sizeof(WKBundlePageLoaderClient));
     loaderClient.version = kWKBundlePageLoaderClientCurrentVersion;
     loaderClient.clientInfo = clientInfo;
-    loaderClient.didClearWindowObjectForFrame = ::didClearWindowForFrame;
+    loaderClient.didClearWindowObjectForFrame = &Bundle::didClearWindowForFrame;
 
     WKBundlePageSetPageLoaderClient(page, &loaderClient);
 

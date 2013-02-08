@@ -51,6 +51,7 @@ private:
     // Bundle client
     static void didCreatePage(WKBundleRef, WKBundlePageRef page, const void* clientInfo);
     static void didReceiveMessageToPage(WKBundleRef bundle, WKBundlePageRef page, WKStringRef name, WKTypeRef messageBody, const void*);
+    static void didClearWindowForFrame(WKBundlePageRef page, WKBundleFrameRef frame, WKBundleScriptWorldRef world, const void* clientInfo);
 
     // uiClient
     static void willRunJavaScriptAlert(WKBundlePageRef page, WKStringRef alertText, WKBundleFrameRef frame, const void *clientInfo);

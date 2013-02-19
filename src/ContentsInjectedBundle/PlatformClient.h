@@ -28,6 +28,10 @@ public:
 
     // Gamepad
     virtual void sampleGamepads(WebKit::WebGamepads& into);
+
+    // FFTFrame
+    virtual WebKit::WebFFTFrame* createFFTFrame(unsigned fftsize);
+    virtual WebKit::WebFFTFrame* createFFTFrame(const WebKit::WebFFTFrame* frame);
 private:
     // Gamepad
     void initializeGamepadController();

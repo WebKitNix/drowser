@@ -26,20 +26,28 @@
 #include "Tab.h"
 #include <iostream>
 #include <cstring>
+#include <WebKit2/WKContext.h>
 #include <WebKit2/WKNumber.h>
 #include <WebKit2/WKPage.h>
 #include <WebKit2/WKFrame.h>
 #include <WebKit2/WKString.h>
 #include <WebKit2/WKURL.h>
 #include <WebKit2/WKType.h>
+#include <WebKit2/WKPreferences.h>
+#include <WebKit2/WKPreferencesPrivate.h>
 #include "Browser.h"
 #include "InjectedBundleGlue.h"
 
-Tab::Tab(int id, Browser* browser, WKContextRef context, WKPageGroupRef pageGroup)
+Tab::Tab(int id, Browser* browser)
     : m_id(id)
     , m_browser(browser)
 {
-    m_view = NIXViewCreate(context, pageGroup);
+    // FIXME Find a good way to find where the injected bundle is
+    WKStringRef wkStr = WKStringCreateWithUTF8CString((getApplicationPath() + "/../ContentsInjectedBundle/libPageBundle.so").c_str());
+    m_context = WKContextCreateWithInjectedBundlePath(wkStr);
+    WKRelease(wkStr);
+
+    m_view = NIXViewCreate(m_context, browser->contentPageGroup());
     NIXViewInitialize(m_view);
     NIXViewSetFocused(m_view, true);
     NIXViewSetVisible(m_view, true);
@@ -69,6 +77,8 @@ Tab::Tab(int id, Browser* browser, WKContextRef context, WKPageGroupRef pageGrou
 Tab::~Tab()
 {
     NIXViewRelease(m_view);
+    WKPageTerminate(m_page);
+    WKRelease(m_context);
 }
 
 void Tab::onStartProgressCallback(WKPageRef, const void* clientInfo)

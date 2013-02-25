@@ -35,7 +35,7 @@ class Browser;
 
 class Tab {
 public:
-    Tab(int id, Browser* browser, WKContextRef context, WKPageGroupRef pageGroup);
+    Tab(int id, Browser* browser);
     ~Tab();
 
     // temporary method while things is changing
@@ -56,6 +56,7 @@ private:
     Browser* m_browser;
     NIXView m_view;
     WKPageRef m_page;
+    WKContextRef m_context;
 
     static void onViewNeedsDisplayCallback(NIXView, WKRect, const void* clientInfo);
     static void onStartProgressCallback(WKPageRef, const void* clientInfo);

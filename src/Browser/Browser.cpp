@@ -68,14 +68,16 @@ Browser::~Browser()
     for (std::pair<const int, Tab*> p : m_tabs)
         delete p.second;
     m_tabs.clear();
+    WKRelease(m_contentPageGroup);
 
     g_main_loop_unref(m_mainLoop);
     NIXViewRelease(m_uiView);
+    WKRelease(m_uiContext);
     delete m_window;
     delete m_glue;
 }
 
-static std::string getApplicationPath()
+std::string getApplicationPath()
 {
     char path[PATH_MAX];
     ssize_t len = readlink("/proc/self/exe", path, PATH_MAX);
@@ -158,14 +160,10 @@ void Browser::initUi()
     WKPageLoadURL(NIXViewGetPage(m_uiView), wkUrl);
     WKRelease(wkUrl);
 
-    // context used on all webpages.
-    wkStr = WKStringCreateWithUTF8CString((appPath + "/../ContentsInjectedBundle/libPageBundle.so").c_str());
-    m_webContext = WKContextCreateWithInjectedBundlePath(wkStr);
+    wkStr = WKStringCreateWithUTF8CString("Content");
+    m_contentPageGroup = WKPageGroupCreateWithIdentifier(wkStr);
     WKRelease(wkStr);
-    wkStr = WKStringCreateWithUTF8CString("Web");
-    m_webPageGroup = WKPageGroupCreateWithIdentifier(wkStr);
-    WKRelease(wkStr);
-    WKPreferencesRef webPreferences = WKPageGroupGetPreferences(m_webPageGroup);
+    WKPreferencesRef webPreferences = WKPageGroupGetPreferences(m_contentPageGroup);
     WKPreferencesSetAcceleratedCompositingEnabled(webPreferences, true);
     WKPreferencesSetWebAudioEnabled(webPreferences, true);
 }
@@ -321,7 +319,7 @@ void Browser::addTab(const int& tabId)
 {
     assert(m_tabs.count(tabId) == 0);
 
-    Tab* tab = new Tab(tabId, this, m_webContext, m_webPageGroup);
+    Tab* tab = new Tab(tabId, this);
     tab->setViewportTransformation(&m_webViewsTransform);
     m_tabs[tabId] = tab;
 

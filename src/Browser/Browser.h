@@ -34,6 +34,8 @@
 
 class Tab;
 
+std::string getApplicationPath();
+
 extern "C" {
 gboolean callUpdateDisplay(gpointer);
 }
@@ -72,6 +74,7 @@ public:
     void dispatchMessage(void (Obj::*method)());
 
     WKPageRef ui() { return m_uiPage; }
+    WKPageGroupRef contentPageGroup() { return m_contentPageGroup; }
 
     void scheduleUpdateDisplay();
 
@@ -93,8 +96,7 @@ private:
     std::map<int, Tab*> m_tabs;
     int m_currentTab;
     NIXMatrix m_webTransform;
-    WKPageGroupRef m_webPageGroup;
-    WKContextRef m_webContext;
+    WKPageGroupRef m_contentPageGroup;
 
     template<typename T>
     bool sendMouseEventToPage(T event);

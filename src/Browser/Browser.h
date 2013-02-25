@@ -76,6 +76,8 @@ public:
     WKPageRef ui() { return m_uiPage; }
     WKPageGroupRef contentPageGroup() { return m_contentPageGroup; }
 
+    WKSize contentsSize() const;
+
     void scheduleUpdateDisplay();
 
 private:

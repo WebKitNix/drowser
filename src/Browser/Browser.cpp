@@ -263,8 +263,7 @@ void Browser::onWindowSizeChange(WKSize size)
     NIXViewSetSize(m_uiView, size);
 
     // FIXME: Procrastinate this relayout on non visible tabs
-    WKSize contentsSize = m_window->size();
-    contentsSize.height -= m_toolBarHeight;
+    WKSize contentsSize = this->contentsSize();
     for (auto p : m_tabs)
         p.second->setSize(contentsSize);
 }
@@ -282,6 +281,13 @@ gboolean callUpdateDisplay(gpointer data)
     browser->m_displayUpdateScheduled = false;
     browser->updateDisplay();
     return 0;
+}
+
+WKSize Browser::contentsSize() const
+{
+    WKSize contentsSize = m_window->size();
+    contentsSize.height -= m_toolBarHeight;
+    return std::move(contentsSize);
 }
 
 void Browser::scheduleUpdateDisplay()
@@ -322,10 +328,7 @@ void Browser::addTab(const int& tabId)
     Tab* tab = new Tab(tabId, this);
     tab->setViewportTransformation(&m_webViewsTransform);
     m_tabs[tabId] = tab;
-
-    WKSize wndSize = m_window->size();
-    wndSize.height -= m_toolBarHeight;
-    tab->setSize(wndSize);
+    tab->setSize(contentsSize());
 
     m_currentTab = tabId;
 }
@@ -348,9 +351,7 @@ void Browser::toolBarHeightChanged(const int& height)
     m_webViewsTransform = NIXMatrixMakeTranslation(0, m_toolBarHeight);
 
     // FIXME: Better to delay this global relayout in a near future
-    WKSize contentsSize = m_window->size();
-    contentsSize.height -= m_toolBarHeight;
-
+    WKSize contentsSize = this->contentsSize();
     for (auto p : m_tabs) {
         Tab* tab = p.second;
         tab->setViewportTransformation(&m_webViewsTransform);
@@ -363,7 +364,7 @@ void Browser::setCurrentTab(const int& tabId)
     if (!m_tabs.count(tabId))
         return;
     m_currentTab = tabId;
-    NIXViewSetSize(currentTab()->webView(), m_window->size());
+    NIXViewSetSize(currentTab()->webView(), contentsSize());
 }
 
 void Browser::loadUrlOnCurrentTab(const std::string& url)

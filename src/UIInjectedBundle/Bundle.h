@@ -51,6 +51,8 @@ private:
     // Bundle client
     static void didCreatePage(WKBundleRef, WKBundlePageRef page, const void* clientInfo);
     static void didReceiveMessageToPage(WKBundleRef bundle, WKBundlePageRef page, WKStringRef name, WKTypeRef messageBody, const void*);
+
+    // Loader client
     static void didClearWindowForFrame(WKBundlePageRef page, WKBundleFrameRef frame, WKBundleScriptWorldRef world, const void* clientInfo);
 
     // uiClient

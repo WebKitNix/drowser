@@ -77,6 +77,7 @@ void Bundle::didClearWindowForFrame(WKBundlePageRef page, WKBundleFrameRef frame
     bundle->m_windowObj = JSContextGetGlobalObject(context);
 
     bundle->registerAPI();
+    WKBundlePostMessage(bundle->m_bundle, (WKStringRef)toWK("didUiReady"), 0);
 }
 
 void Bundle::didCreatePage(WKBundleRef, WKBundlePageRef page, const void* clientInfo)

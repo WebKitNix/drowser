@@ -31,6 +31,7 @@
 #include <NIXView.h>
 #include <map>
 #include <string>
+#include <vector>
 
 class Tab;
 
@@ -45,7 +46,7 @@ class InjectedBundleGlue;
 class Browser : public DesktopWindowClient
 {
 public:
-    Browser();
+    Browser(const std::vector<std::string>& urls);
     ~Browser();
 
     int run();
@@ -61,6 +62,7 @@ public:
     virtual void onWindowSizeChange(WKSize);
     virtual void onWindowClose();
 
+    void didUiReady();
     void addTab(const int& tabId);
     void closeTab(const int& tabId);
     void toolBarHeightChanged(const int& height);
@@ -99,6 +101,8 @@ private:
     int m_currentTab;
     NIXMatrix m_webTransform;
     WKPageGroupRef m_contentPageGroup;
+
+    const std::vector<std::string>& m_initialUrls;
 
     template<typename T>
     bool sendMouseEventToPage(T event);

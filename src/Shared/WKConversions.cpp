@@ -42,6 +42,11 @@ WKTypeRef toWK(const int& value)
     return WKUInt64Create(value);
 }
 
+WKTypeRef toWK(const char* value)
+{
+    return WKStringCreateWithUTF8CString(value);
+}
+
 template<>
 WKTypeRef toWK(const std::string& value)
 {

@@ -57,9 +57,9 @@ $(document).ready(function() {
         activeTab._url = urlBar.text()
     });
 
-    $("#plus").click(addEmptyTab);
+    $("#plus").click(function() { addTab() });
 
-    $(document).bind('keydown', 'ctrl+t', function() { addEmptyTab(); return false; });
+    $(document).bind('keydown', 'ctrl+t', function() { addTab(); return false; });
     $(document).bind('keydown', 'ctrl+w', function() { closeTab(); return false; });
 
     // Function stubs to debug UI on a browser
@@ -76,7 +76,6 @@ $(document).ready(function() {
 
     progressBarBgMargin = parseInt($("#progressBarFill").css("margin-left"));
     updateTabHeight();
-    addEmptyTab();
 });
 
 
@@ -109,6 +108,17 @@ function progressChanged(tabId, value)
         $("#progressBar").width(($("#urlBarBgFill").width() * value) + progressBarBgMargin);
 }
 
+function openUrls()
+{
+    if (!arguments.length) {
+        addTab();
+        return;
+    }
+
+    for (var i = 0; i < arguments.length; i++)
+        addTab(arguments[i]);
+}
+
 function titleChanged(tabId, title)
 {
     var tab = document.getElementById(String(tabId));
@@ -121,7 +131,7 @@ function updateTabHeight()
     window._toolBarHeightChanged($("#tabBar").height() + 36);
 }
 
-function addEmptyTab()
+function addTab(url)
 {
     var tabBar = $("#tabBar");
     var barHeight = tabBar.height();
@@ -144,7 +154,7 @@ function addEmptyTab()
     tabElem.onclick = function() { selectTab(tabElem); }
     $("#plus").before(tabElem);
 
-    tabElem._url = "http://";
+    tabElem._url = url ? url : "http://";
     $("#urlBar").text(tabElem._url);
 
     if (barHeight < tabBar.height())
@@ -152,6 +162,8 @@ function addEmptyTab()
 
     window._addTab(tabId);
     selectTab(tabElem);
+    if (url)
+        loadUrl();
 }
 
 function selectTab(obj)

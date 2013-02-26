@@ -32,6 +32,8 @@
 template<typename T>
 T fromWK(WKTypeRef);
 
+WKTypeRef toWK(const char*);
+
 template<typename T>
 WKTypeRef toWK(const T&);
 

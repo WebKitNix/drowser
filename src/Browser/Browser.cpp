@@ -50,13 +50,14 @@
 #include "InjectedBundleGlue.h"
 #include "Tab.h"
 
-Browser::Browser()
+Browser::Browser(const std::vector<std::string>& urls)
     : m_displayUpdateScheduled(false)
     , m_window(DesktopWindow::create(this, 1024, 600))
     , m_glue(0)
     , m_uiFocused(true)
     , m_toolBarHeight(0)
     , m_currentTab(-1)
+    , m_initialUrls(urls)
 {
     m_mainLoop = g_main_loop_new(0, false);
 
@@ -148,6 +149,7 @@ void Browser::initUi()
     m_uiPage = NIXViewGetPage(m_uiView);
 
     m_glue = new InjectedBundleGlue(m_uiContext);
+    m_glue->bind("didUiReady", this, &Browser::didUiReady);
     m_glue->bind("_addTab", this, &Browser::addTab);
     m_glue->bind("_closeTab", this, &Browser::closeTab);
     m_glue->bind("_toolBarHeightChanged", this, &Browser::toolBarHeightChanged);
@@ -319,6 +321,11 @@ void Browser::updateDisplay()
 Tab* Browser::currentTab()
 {
     return m_tabs[m_currentTab];
+}
+
+void Browser::didUiReady()
+{
+    postToBundle(m_uiPage, "openUrls", m_initialUrls);
 }
 
 void Browser::addTab(const int& tabId)

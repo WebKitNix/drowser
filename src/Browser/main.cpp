@@ -26,14 +26,22 @@
 #include "Browser.h"
 #include "FatalError.h"
 #include <iostream>
+#include <vector>
+#include <algorithm>
+#include <iterator>
 
 using namespace std;
 
-int main(int argc, char** argv) try
+int main(int argc, const char** argv)
 {
-    Browser browser;
-    return browser.run();
-} catch (const FatalError& e) {
-    cerr << e.what() << endl;
-    return 1;
+    try {
+        std::vector<std::string> args;
+        std::copy(&argv[1], &argv[argc], std::back_inserter(args));
+
+        Browser browser(args);
+        return browser.run();
+    } catch (const FatalError& e) {
+        cerr << e.what() << endl;
+        return 1;
+    }
 }

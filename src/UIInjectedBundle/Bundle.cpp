@@ -151,7 +151,7 @@ JSValueRef Bundle::toJS(WKTypeRef wktype)
     } else if (tid == WKStringGetTypeID()) {
         JSStringRef str = WKStringCopyJSString((WKStringRef)wktype);
         JSValueRef jsValue = JSValueMakeString(gBundle->m_jsContext, str);
-        WKRelease(str);
+        JSStringRelease(str);
         return jsValue;
     } else {
         std::cerr << "Unknown WKTypeID" << std::endl;

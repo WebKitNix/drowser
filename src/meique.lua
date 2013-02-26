@@ -4,5 +4,5 @@ x11 = findPackage("x11", REQUIRED)
 nix = findPackage("WebKitNix", REQUIRED)
 
 addSubdirectory("Browser")
--- addSubdirectory("ContentsInjectedBundle")
+addSubdirectory("ContentsInjectedBundle")
 addSubdirectory("UIInjectedBundle")

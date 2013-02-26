@@ -6,4 +6,8 @@ gamepad = Library:new("gamepad", STATIC)
 gamepad:usePackage(gio)
 gamepad:usePackage(udev)
 gamepad:usePackage(nix)
-gamepad:addFile("Gamepad.cpp")
+gamepad:addIncludePath("..")
+gamepad:addFiles([[
+    Gamepad.cpp
+    PlatformClientGamepad.cpp
+]])

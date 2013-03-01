@@ -28,7 +28,7 @@ WebData PlatformClient::loadResource(const char* name)
     return AudioFileReader::loadResource(name);
 }
 
-WebAudioDevice* PlatformClient::createAudioDevice(size_t bufferSize, unsigned numberOfInputChannels, unsigned numberOfChannels, double sampleRate, WebAudioDevice::RenderCallback* renderCallback)
+WebAudioDevice* PlatformClient::createAudioDevice(size_t bufferSize, unsigned numberOfInputChannels, unsigned numberOfChannels, double sampleRate, WebAudioDevice::RenderCallback* renderCallback, const WebString&)
 {
     return new AudioDestination(bufferSize, numberOfInputChannels, numberOfChannels, sampleRate, renderCallback);
 }

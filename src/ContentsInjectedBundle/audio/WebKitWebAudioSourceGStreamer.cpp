@@ -19,7 +19,12 @@
 #include "WebKitWebAudioSourceGStreamer.h"
 
 #include <gst/pbutils/pbutils.h>
+
+#ifdef GST_API_VERSION_1
+#include <gst/audio/audio.h>
+#else
 #include <gst/audio/multichannel.h>
+#endif
 
 #include <NixPlatform/Platform.h>
 
@@ -45,7 +50,11 @@ struct _WebKitWebAudioSourcePrivate {
     GstElement* wavEncoder; //FIXME: WILL LEAK!!!
 
     GstTask* task;
+#ifdef GST_API_VERSION_1
+    GRecMutex mutex;
+#else
     GStaticRecMutex mutex;
+#endif
 
     GSList* pads; // List of queue sink pads. One queue for each planar audio channel.
     GstPad* sourcePad; // src pad of the element, interleaved wav data is pushed to it.
@@ -74,11 +83,68 @@ static void webKitWebAudioSrcLoop(WebKitWebAudioSrc*);
 
 static GstCaps* getGStreamerMonoAudioCaps(float sampleRate)
 {
+#ifdef GST_API_VERSION_1
+    return gst_caps_new_simple("audio/x-raw", "rate", G_TYPE_INT, static_cast<int>(sampleRate),
+                               "channels", G_TYPE_INT, 1,
+                               "format", G_TYPE_STRING, gst_audio_format_to_string(GST_AUDIO_FORMAT_F32),
+                               "layout", G_TYPE_STRING, "non-interleaved", NULL);
+#else
     return gst_caps_new_simple("audio/x-raw-float", "rate", G_TYPE_INT, static_cast<int>(sampleRate),
                                "channels", G_TYPE_INT, 1,
                                "endianness", G_TYPE_INT, G_BYTE_ORDER,
                                "width", G_TYPE_INT, 32, NULL);
+#endif
 }
+
+#ifdef GST_API_VERSION_1
+// XXX: From AudioBus.h (we don't have it), neeeded for the next function. Put this in a better place?
+enum {
+    ChannelLeft = 0,
+    ChannelRight = 1,
+    ChannelCenter = 2, // center and mono are the same
+    ChannelMono = 2,
+    ChannelLFE = 3,
+    ChannelSurroundLeft = 4,
+    ChannelSurroundRight = 5,
+};
+
+// XXX: The whole next function can handle both gstreamer-1.0 and 0.10, which is why it has an #ifdef
+// in the middle of it. It was enclosed in this 'outer' #ifdef because it was not needed in the
+// 0.10 build and hence there was an unused function warning.
+static GstAudioChannelPosition webKitWebAudioGStreamerChannelPosition(int channelIndex)
+{
+    GstAudioChannelPosition position = GST_AUDIO_CHANNEL_POSITION_NONE;
+
+    switch (channelIndex) {
+    case ChannelLeft:
+        position = GST_AUDIO_CHANNEL_POSITION_FRONT_LEFT;
+        break;
+    case ChannelRight:
+        position = GST_AUDIO_CHANNEL_POSITION_FRONT_RIGHT;
+        break;
+    case ChannelCenter:
+        position = GST_AUDIO_CHANNEL_POSITION_FRONT_CENTER;
+        break;
+    case ChannelLFE:
+#ifdef GST_API_VERSION_1
+        position = GST_AUDIO_CHANNEL_POSITION_LFE1;
+#else
+        position = GST_AUDIO_CHANNEL_POSITION_LFE;
+#endif
+        break;
+    case ChannelSurroundLeft:
+        position = GST_AUDIO_CHANNEL_POSITION_REAR_LEFT;
+        break;
+    case ChannelSurroundRight:
+        position = GST_AUDIO_CHANNEL_POSITION_REAR_RIGHT;
+        break;
+    default:
+        break;
+    };
+
+    return position;
+}
+#endif
 
 #define webkit_web_audio_src_parent_class parent_class
 G_DEFINE_TYPE_WITH_CODE(WebKitWebAudioSrc, webkit_web_audio_src, GST_TYPE_BIN, GST_DEBUG_CATEGORY_INIT(webkit_web_audio_src_debug, \
@@ -154,9 +220,14 @@ static void webkit_web_audio_src_init(WebKitWebAudioSrc* src)
 
     priv->handler = 0;
 
+#ifdef GST_API_VERSION_1
+    g_rec_mutex_init(&priv->mutex);
+    priv->task = gst_task_new(reinterpret_cast<GstTaskFunction>(webKitWebAudioSrcLoop), src, 0);
+#else
     g_static_rec_mutex_init(&priv->mutex);
-
     priv->task = gst_task_create(reinterpret_cast<GstTaskFunction>(webKitWebAudioSrcLoop), src);
+#endif
+
     gst_task_set_lock(priv->task, &priv->mutex);
 }
 
@@ -190,7 +261,16 @@ static void webKitWebAudioSrcConstructed(GObject* object)
         GstElement* audioconvert = gst_element_factory_make("audioconvert", 0);
 
         GstCaps* monoCaps = getGStreamerMonoAudioCaps(priv->sampleRate);
+
+#ifdef GST_API_VERSION_1
+        GstAudioInfo info;
+        gst_audio_info_from_caps(&info, monoCaps);
+        GST_AUDIO_INFO_POSITION(&info, 0) = webKitWebAudioGStreamerChannelPosition(channelIndex);
+        GstCaps* caps = gst_audio_info_to_caps(&info);
+        g_object_set(capsfilter, "caps", caps, NULL);
+#else
         g_object_set(capsfilter, "caps", monoCaps, NULL);
+#endif
 
         // Configure the queue for minimal latency.
         g_object_set(queue, "max-size-buffers", static_cast<guint>(1), NULL);
@@ -217,7 +297,11 @@ static void webKitWebAudioSrcFinalize(GObject* object)
     WebKitWebAudioSrc* src = WEBKIT_WEB_AUDIO_SRC(object);
     WebKitWebAudioSourcePrivate* priv = src->priv;
 
+#ifdef GST_API_VERSION_1
+    g_rec_mutex_clear(&priv->mutex);
+#else
     g_static_rec_mutex_free(&priv->mutex);
+#endif
 
     g_slist_free_full(priv->pads, reinterpret_cast<GDestroyNotify>(gst_object_unref));
 
@@ -280,7 +364,14 @@ static void webKitWebAudioSrcLoop(WebKitWebAudioSrc* src)
     for (unsigned i = 0; i < g_slist_length(priv->pads); i++) {
         GstBuffer* channelBuffer = gst_buffer_new_and_alloc(bufferSize);
         channelBufferList = g_slist_prepend(channelBufferList, channelBuffer);
+#ifdef GST_API_VERSION_1
+        GstMapInfo info;
+        gst_buffer_map(channelBuffer, &info, GST_MAP_READ);
+        audioData[i] = reinterpret_cast<float*>(info.data);
+        gst_buffer_unmap(channelBuffer, &info);
+#else
         audioData[i] = reinterpret_cast<float*>(GST_BUFFER_DATA(channelBuffer));
+#endif
     }
     channelBufferList = g_slist_reverse(channelBufferList);
 
@@ -297,13 +388,17 @@ static void webKitWebAudioSrcLoop(WebKitWebAudioSrc* src)
         GstPad* pad = static_cast<GstPad*>(g_slist_nth_data(priv->pads, i));
         GstBuffer* channelBuffer = static_cast<GstBuffer*>(g_slist_nth_data(channelBufferList, i));
 
+#ifndef GST_API_VERSION_1
         GstCaps* monoCaps = getGStreamerMonoAudioCaps(priv->sampleRate);
         GstStructure* structure = gst_caps_get_structure(monoCaps, 0);
         GstAudioChannelPosition channelPosition = (i == 0) ? GST_AUDIO_CHANNEL_POSITION_FRONT_LEFT : GST_AUDIO_CHANNEL_POSITION_FRONT_RIGHT;
         gst_audio_set_channel_positions(structure, &channelPosition);
         gst_buffer_set_caps(channelBuffer, monoCaps);
+#endif
 
-        gst_pad_chain(pad, channelBuffer);
+        GstFlowReturn ret = gst_pad_chain(pad, channelBuffer);
+        if (ret != GST_FLOW_OK)
+            GST_ELEMENT_ERROR(src, CORE, PAD, ("Internal WebAudioSrc error"), ("Failed to push buffer on %s", GST_DEBUG_PAD_NAME(pad)));
     }
 
     g_slist_free(channelBufferList);

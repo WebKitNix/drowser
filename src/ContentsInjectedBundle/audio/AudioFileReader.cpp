@@ -25,7 +25,12 @@
 #include <gst/gst.h>
 #include <gst/app/gstappsink.h>
 #include <gst/pbutils/pbutils.h>
+
+#ifdef GST_API_VERSION_1
+#include <gst/audio/audio.h>
+#else
 #include <gst/audio/multichannel.h>
+#endif
 
 #include <glib.h>
 #include <cstring>
@@ -56,11 +61,34 @@ WebData AudioFileReader::loadResource(const char* name)
 
 static GstCaps* getGStreamerAudioCaps(int channels, float sampleRate)
 {
-    return gst_caps_new_simple("audio/x-raw-float", "rate", G_TYPE_INT, static_cast<int>(sampleRate), "channels", G_TYPE_INT, channels, "endianness", G_TYPE_INT, G_BYTE_ORDER, "width", G_TYPE_INT, 32, NULL);
+#ifdef GST_API_VERSION_1
+    return gst_caps_new_simple("audio/x-raw", "rate", G_TYPE_INT, static_cast<int>(sampleRate),
+        "channels", G_TYPE_INT, channels,
+        "format", G_TYPE_STRING, gst_audio_format_to_string(GST_AUDIO_FORMAT_F32),
+        "layout", G_TYPE_STRING, "interleaved", NULL);
+#else
+    return gst_caps_new_simple("audio/x-raw-float", "rate", G_TYPE_INT, static_cast<int>(sampleRate),
+        "channels", G_TYPE_INT, channels,
+        "endianness", G_TYPE_INT, G_BYTE_ORDER,
+        "width", G_TYPE_INT, 32, NULL);
+#endif
 }
 
 static void copyGStreamerBuffersToAudioChannel(GstBufferList* buffers, float* audioChannel)
 {
+#ifdef GST_API_VERSION_1
+    gsize offset = 0;
+    for (unsigned i = 0; i < gst_buffer_list_length(buffers); i++) {
+        GstBuffer* buffer = gst_buffer_list_get(buffers, i);
+        if (!buffer)
+            continue;
+        GstMapInfo info;
+        gst_buffer_map(buffer, &info, GST_MAP_READ);
+        memcpy(audioChannel + offset, reinterpret_cast<float*>(info.data), info.size);
+        offset += info.size / sizeof(float);
+        gst_buffer_unmap(buffer, &info);
+    }
+#else
     GstBufferListIterator* iter = gst_buffer_list_iterate(buffers);
     gst_buffer_list_iterator_next_group(iter);
     GstBuffer* buffer = gst_buffer_list_iterator_merge_group(iter);
@@ -69,11 +97,16 @@ static void copyGStreamerBuffersToAudioChannel(GstBufferList* buffers, float* au
         gst_buffer_unref(buffer);
     }
     gst_buffer_list_iterator_free(iter);
+#endif
 }
 
 static GstFlowReturn onAppsinkNewBufferCallback(GstAppSink* sink, gpointer userData)
 {
+#ifdef GST_API_VERSION_1
+    return static_cast<AudioFileReader*>(userData)->handleSample(sink);
+#else
     return static_cast<AudioFileReader*>(userData)->handleBuffer(sink);
+#endif
 }
 
 gboolean messageCallback(GstBus* bus, GstMessage* message, AudioFileReader* reader)
@@ -108,9 +141,11 @@ AudioFileReader::AudioFileReader(const void* data, size_t dataSize)
     , m_dataSize(dataSize)
     , m_sampleRate(44100)
     , m_frontLeftBuffers(0)
-    , m_frontLeftBuffersIterator(0)
     , m_frontRightBuffers(0)
+#ifndef GST_API_VERSION_1
+    , m_frontLeftBuffersIterator(0)
     , m_frontRightBuffersIterator(0)
+#endif
     , m_pipeline(0)
     , m_channelSize(0)
     , m_decodebin(0)
@@ -142,14 +177,17 @@ AudioFileReader::~AudioFileReader()
     }*/
     //////////// FIXME WITH PROPER UNREF OR DELETE!!!!
 
+#ifndef GST_API_VERSION_1
     gst_buffer_list_iterator_free(m_frontLeftBuffersIterator);
     gst_buffer_list_iterator_free(m_frontRightBuffersIterator);
+#endif
     gst_buffer_list_unref(m_frontLeftBuffers);
     gst_buffer_list_unref(m_frontRightBuffers);
 
     //FIXME DELETE THE REST OF THE PTRs!!!*/
 }
 
+#ifndef GST_API_VERSION_1
 GstFlowReturn AudioFileReader::handleBuffer(GstAppSink* sink)
 {
     GstBuffer* buffer = gst_app_sink_pull_buffer(sink);
@@ -203,6 +241,48 @@ GstFlowReturn AudioFileReader::handleBuffer(GstAppSink* sink)
     gst_caps_unref(caps);
     return GST_FLOW_OK;
 }
+#else
+GstFlowReturn AudioFileReader::handleSample(GstAppSink* sink)
+{
+    GstSample* sample = gst_app_sink_pull_sample(sink);
+    if (!sample)
+        return GST_FLOW_ERROR;
+
+    GstBuffer* buffer = gst_sample_get_buffer(sample);
+    if (!buffer) {
+        gst_sample_unref(sample);
+        return GST_FLOW_ERROR;
+    }
+
+    GstCaps* caps = gst_sample_get_caps(sample);
+    if (!caps) {
+        gst_sample_unref(sample);
+        return GST_FLOW_ERROR;
+    }
+
+    GstAudioInfo info;
+    gst_audio_info_from_caps(&info, caps);
+    int frames = GST_CLOCK_TIME_TO_FRAMES(GST_BUFFER_DURATION(buffer), GST_AUDIO_INFO_RATE(&info));
+
+    // Check the first audio channel. The buffer is supposed to store
+    // data of a single channel anyway.
+    switch (GST_AUDIO_INFO_POSITION(&info, 0)) {
+    case GST_AUDIO_CHANNEL_POSITION_FRONT_LEFT:
+        gst_buffer_list_add(m_frontLeftBuffers, gst_buffer_ref(buffer));
+        m_channelSize += frames;
+        break;
+    case GST_AUDIO_CHANNEL_POSITION_FRONT_RIGHT:
+        gst_buffer_list_add(m_frontRightBuffers, gst_buffer_ref(buffer));
+        break;
+    default:
+        break;
+    }
+
+    gst_sample_unref(sample);
+    return GST_FLOW_OK;
+}
+
+#endif
 
 gboolean AudioFileReader::handleMessage(GstMessage* message)
 {
@@ -243,15 +323,15 @@ void AudioFileReader::handleNewDeinterleavePad(GstPad* pad)
     GstAppSinkCallbacks callbacks;
     callbacks.eos = 0;
     callbacks.new_preroll = 0;
+#ifdef GST_API_VERSION_1
+    callbacks.new_sample = onAppsinkNewBufferCallback;
+#else
     callbacks.new_buffer_list = 0;
     callbacks.new_buffer = onAppsinkNewBufferCallback;
+#endif
     gst_app_sink_set_callbacks(GST_APP_SINK(sink), &callbacks, this, 0);
 
     g_object_set(sink, "sync", FALSE, NULL);
-
-    GstCaps* caps = getGStreamerAudioCaps(1, m_sampleRate);
-    gst_app_sink_set_caps(GST_APP_SINK(sink), caps);
-    gst_caps_unref(caps);
 
     gst_bin_add_many(GST_BIN(m_pipeline), queue, sink, NULL);
 
@@ -323,7 +403,12 @@ void AudioFileReader::decodeAudioForBusCreation()
     GInputStream* memoryStream = g_memory_input_stream_new_from_data(m_data, m_dataSize, 0);
     g_object_set(source, "stream", memoryStream, NULL);
 
+#ifdef GST_API_VERSION_1
+    m_decodebin = gst_element_factory_make("decodebin", 0);
+#else
     m_decodebin = gst_element_factory_make("decodebin2", 0);
+#endif
+
     g_signal_connect(m_decodebin, "pad-added", G_CALLBACK(onGStreamerDecodebinPadAddedCallback), this);
     gst_bin_add_many(GST_BIN(m_pipeline), source, m_decodebin, NULL);
     gst_element_link_pads_full(source, "src", m_decodebin, "sink", GST_PAD_LINK_CHECK_NOTHING);
@@ -335,12 +420,15 @@ bool AudioFileReader::createBus(WebAudioBus* destinationBus, float sampleRate)
     m_sampleRate = sampleRate;
 
     m_frontLeftBuffers = gst_buffer_list_new();
+    m_frontRightBuffers = gst_buffer_list_new();
+
+#ifndef GST_API_VERSION_1
     m_frontLeftBuffersIterator = gst_buffer_list_iterate(m_frontLeftBuffers);
     gst_buffer_list_iterator_add_group(m_frontLeftBuffersIterator);
 
-    m_frontRightBuffers = gst_buffer_list_new();
     m_frontRightBuffersIterator = gst_buffer_list_iterate(m_frontRightBuffers);
     gst_buffer_list_iterator_add_group(m_frontRightBuffersIterator);
+#endif
 
     //FIXME: POSSIBLE LEAKING PTR WARNING
     GMainContext* context = g_main_context_new();

@@ -126,7 +126,7 @@ void FFTGStreamer::multiply(const WebFFTFrame& frame)
 
     const unsigned framesToProcess = m_frequencyDomainSize;
 
-    for (int i = 0; i < framesToProcess; ++i) {
+    for (unsigned i = 0; i < framesToProcess; ++i) {
         float realResult = real1P[i] * real2P[i] - imag1P[i] * imag2P[i];
         float imagResult = real1P[i] * imag2P[i] + imag1P[i] * real2P[i];
 
@@ -152,7 +152,7 @@ float* FFTGStreamer::imagData() const
 
 void FFTGStreamer::updatePlanarData()
 {
-    for (int i = 0; i < m_frequencyDomainSize; ++i) {
+    for (unsigned i = 0; i < m_frequencyDomainSize; ++i) {
         m_realData[i] = m_complexData[i].r;
         m_imagData[i] = m_complexData[i].i;
     }
@@ -160,7 +160,7 @@ void FFTGStreamer::updatePlanarData()
 
 void FFTGStreamer::updateComplexData()
 {
-    for (int i = 0; i < m_frequencyDomainSize; ++i) {
+    for (unsigned i = 0; i < m_frequencyDomainSize; ++i) {
         m_complexData[i].r = m_realData[i];
         m_complexData[i].i = m_imagData[i];
     }

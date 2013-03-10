@@ -15,7 +15,12 @@ public:
 
     bool createBus(WebKit::WebAudioBus* destinationBus, float sampleRate);
 
+#ifdef GST_API_VERSION_1
+    GstFlowReturn handleSample(GstAppSink*);
+#else
     GstFlowReturn handleBuffer(GstAppSink*);
+#endif
+
     gboolean handleMessage(GstMessage*);
     void handleNewDeinterleavePad(GstPad*);
     void deinterleavePadsConfigured();
@@ -26,10 +31,14 @@ private:
     const void* m_data;
     size_t m_dataSize;
     float m_sampleRate;
+
     GstBufferList* m_frontLeftBuffers;
-    GstBufferListIterator* m_frontLeftBuffersIterator;
     GstBufferList* m_frontRightBuffers;
+#ifndef GST_API_VERSION_1
+    GstBufferListIterator* m_frontLeftBuffersIterator;
     GstBufferListIterator* m_frontRightBuffersIterator;
+#endif
+
     GstElement* m_pipeline;
     unsigned m_channelSize;
     GstElement* m_decodebin;

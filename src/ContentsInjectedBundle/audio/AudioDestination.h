@@ -11,7 +11,8 @@ public:
 
     virtual void start();
     virtual void stop();
-    virtual double sampleRate() { return m_sampleRate; }
+
+    double sampleRate() { return m_sampleRate; }
 
     void finishBuildingPipelineAfterWavParserPadReady(GstPad*);
 

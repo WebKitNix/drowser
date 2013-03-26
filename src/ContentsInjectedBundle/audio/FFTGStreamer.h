@@ -27,6 +27,7 @@
 #define FFTGStreamer_h
 
 #include <NixPlatform/Platform.h>
+#include <NixPlatform/WebFFTFrame.h>
 
 #include <glib.h>
 G_BEGIN_DECLS

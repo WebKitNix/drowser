@@ -113,7 +113,7 @@ void AudioDestination::start()
 
 void AudioDestination::stop()
 {
-    if (!m_wavParserAvailable || m_audioSinkAvailable)
+    if (!m_wavParserAvailable || !m_audioSinkAvailable)
         return;
 
     gst_element_set_state(m_pipeline, GST_STATE_PAUSED);

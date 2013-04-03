@@ -35,6 +35,7 @@
 #include <glib.h>
 #include <cstring>
 #include <cstdio>
+#include <cassert>
 
 using namespace WebKit;
 
@@ -74,26 +75,23 @@ static GstCaps* getGStreamerAudioCaps(int channels, float sampleRate)
 #endif
 }
 
-static void copyGStreamerBuffersToAudioChannel(GstBufferList* buffers, float* audioChannel)
+static void copyGStreamerBuffersToAudioChannel(GstBufferList* buffers, float* destination)
 {
 #ifdef GST_API_VERSION_1
-    gsize offset = 0;
-    for (unsigned i = 0; i < gst_buffer_list_length(buffers); i++) {
+    unsigned bufferCount = gst_buffer_list_length(buffers);
+    for (unsigned i = 0; i < bufferCount; ++i) {
         GstBuffer* buffer = gst_buffer_list_get(buffers, i);
-        if (!buffer)
-            continue;
-        GstMapInfo info;
-        gst_buffer_map(buffer, &info, GST_MAP_READ);
-        memcpy(audioChannel + offset, reinterpret_cast<float*>(info.data), info.size);
-        offset += info.size / sizeof(float);
-        gst_buffer_unmap(buffer, &info);
+        assert(buffer);
+        gsize bufferSize = gst_buffer_get_size(buffer);
+        gst_buffer_extract(buffer, 0, destination, bufferSize);
+        destination += bufferSize / sizeof(float);
     }
 #else
     GstBufferListIterator* iter = gst_buffer_list_iterate(buffers);
     gst_buffer_list_iterator_next_group(iter);
     GstBuffer* buffer = gst_buffer_list_iterator_merge_group(iter);
     if (buffer) {
-        memcpy(audioChannel, reinterpret_cast<float*>(GST_BUFFER_DATA(buffer)), GST_BUFFER_SIZE(buffer));
+        memcpy(destination, reinterpret_cast<float*>(GST_BUFFER_DATA(buffer)), GST_BUFFER_SIZE(buffer));
         gst_buffer_unref(buffer);
     }
     gst_buffer_list_iterator_free(iter);

@@ -361,7 +361,7 @@ static void webKitWebAudioSrcLoop(WebKitWebAudioSrc* src)
     GSList* channelBufferList = 0;
     unsigned bufferSize = priv->framesToPull * sizeof(float);
     float** audioData = (float**) malloc(g_slist_length(priv->pads) * sizeof(float*));
-    for (unsigned i = 0; i < g_slist_length(priv->pads); i++) {
+    for (int i = g_slist_length(priv->pads) - 1; i >= 0; i--) {
         GstBuffer* channelBuffer = gst_buffer_new_and_alloc(bufferSize);
         channelBufferList = g_slist_prepend(channelBufferList, channelBuffer);
 #ifdef GST_API_VERSION_1
@@ -373,7 +373,6 @@ static void webKitWebAudioSrcLoop(WebKitWebAudioSrc* src)
         audioData[i] = reinterpret_cast<float*>(GST_BUFFER_DATA(channelBuffer));
 #endif
     }
-    channelBufferList = g_slist_reverse(channelBufferList);
 
     // FIXME: store audioData into priv???
     //const WebVector<float*>& sourceData, const WebVector<float*>& destinationData, size_t numberOfFrames) { };
@@ -384,7 +383,7 @@ static void webKitWebAudioSrcLoop(WebKitWebAudioSrc* src)
     audioDataVector[1] = audioData[1];
     priv->handler->render(sourceDataVector, audioDataVector, priv->framesToPull);
 
-    for (unsigned i = 0; i < g_slist_length(priv->pads); i++) {
+    for (int i = g_slist_length(priv->pads) - 1; i >= 0; i--) {
         GstPad* pad = static_cast<GstPad*>(g_slist_nth_data(priv->pads, i));
         GstBuffer* channelBuffer = static_cast<GstBuffer*>(g_slist_nth_data(channelBufferList, i));
 

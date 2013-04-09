@@ -282,21 +282,34 @@ GstFlowReturn AudioFileReader::handleSample(GstAppSink* sink)
 
 #endif
 
+static void printGstMessage(GstMessage* msg, bool isError = false)
+{
+    GError* error = nullptr;
+    gchar* debug = nullptr;
+
+    if (isError)
+        gst_message_parse_error(msg, &error, &debug);
+    else
+        gst_message_parse_warning(msg, &error, &debug);
+
+    g_printerr("%s from element %s: %s\n", (isError) ? "ERROR" : "WARNING", GST_OBJECT_NAME(msg->src), error->message);
+    g_printerr("Debugging info: %s\n", (debug) ? debug : "none");
+
+    g_error_free(error);
+    g_free(debug);
+}
+
 gboolean AudioFileReader::handleMessage(GstMessage* message)
 {
-    //GError** error;
-    //gchar** debug;
     switch (GST_MESSAGE_TYPE(message)) {
     case GST_MESSAGE_EOS:
         g_main_loop_quit(m_loop);
         break;
     case GST_MESSAGE_WARNING:
-        //gst_message_parse_warning(message, error, debug);
-        //g_warning("Warning: %d, %s. Debug output: %s", error->code,  error->message, debug);
+        printGstMessage(message);
         break;
     case GST_MESSAGE_ERROR:
-        //gst_message_parse_error(message, error, debug);
-        //g_warning("Error: %d, %s. Debug output: %s", error->code,  error->message, debug);
+        printGstMessage(message, true);
         m_errorOccurred = true;
         g_main_loop_quit(m_loop);
         break;
@@ -304,8 +317,6 @@ gboolean AudioFileReader::handleMessage(GstMessage* message)
         break;
     }
 
-    //delete error;
-    //delete debug;
     return TRUE;
 }
 

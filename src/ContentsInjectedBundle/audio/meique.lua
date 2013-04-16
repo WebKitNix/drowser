@@ -4,6 +4,7 @@ gstreamerAudio = findPackage("gstreamer-audio-0.10", REQUIRED)
 gstreamerFft = findPackage("gstreamer-fft-0.10", REQUIRED)
 
 audio = Library:new("audio", STATIC)
+audio:addCustomFlags("-std=c++0x")
 audio:usePackage(gstreamer)
 audio:usePackage(gstreamerApp)
 audio:usePackage(gstreamerAudio)

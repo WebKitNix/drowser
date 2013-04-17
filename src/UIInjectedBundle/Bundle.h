@@ -44,9 +44,14 @@ private:
     JSGlobalContextRef m_jsContext;
     JSObjectRef m_windowObj;
 
+    enum JSVectorConversionOption {
+        NormalOrder,
+        ReverseOrder
+    };
+
     void registerJSFunction(const char* name);
     static JSValueRef toJS(WKTypeRef wktype);
-    std::vector<JSValueRef> toJSVector(WKTypeRef wktype);
+    std::vector<JSValueRef> toJSVector(WKTypeRef wktype, JSVectorConversionOption option = NormalOrder);
 
     // Bundle client
     static void didCreatePage(WKBundleRef, WKBundlePageRef page, const void* clientInfo);

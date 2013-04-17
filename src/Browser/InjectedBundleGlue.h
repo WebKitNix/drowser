@@ -44,8 +44,8 @@ template<typename ... T>
 WKTypeRef createArg(WKTypeRef first, T...t)
 {
     WKMutableArrayRef pack = WKMutableArrayCreate();
-    WKArrayAppendItem(pack, first);
     _nop((WKArrayAppendItem(pack, t), 1)...);
+    WKArrayAppendItem(pack, first);
     return pack;
 }
 

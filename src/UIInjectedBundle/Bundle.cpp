@@ -38,6 +38,7 @@
 #include <cstring>
 #include <cassert>
 #include <iostream>
+#include <cmath>
 #include <string>
 
 // I don't care about windows or gcc < 4.x right now.
@@ -99,7 +100,7 @@ void Bundle::didCreatePage(WKBundleRef, WKBundlePageRef page, const void* client
 
 void Bundle::didReceiveMessageToPage(WKBundleRef, WKBundlePageRef, WKStringRef name, WKTypeRef messageBody, const void*)
 {
-    gBundle->callJSFunction(WKStringCopyJSString(name), gBundle->toJSVector(messageBody));
+    gBundle->callJSFunction(WKStringCopyJSString(name), gBundle->toJSVector(messageBody, ReverseOrder));
 }
 
 void Bundle::registerAPI()
@@ -161,7 +162,7 @@ JSValueRef Bundle::toJS(WKTypeRef wktype)
     }
 }
 
-std::vector<JSValueRef> Bundle::toJSVector(WKTypeRef wktype)
+std::vector<JSValueRef> Bundle::toJSVector(WKTypeRef wktype, JSVectorConversionOption option)
 {
     if (WKGetTypeID(wktype) != WKArrayGetTypeID())
         return { toJS(wktype) };
@@ -170,8 +171,12 @@ std::vector<JSValueRef> Bundle::toJSVector(WKTypeRef wktype)
     int size = WKArrayGetSize(array);
     std::vector<JSValueRef> result(size);
 
+    int fix = 0;
+    if (option == ReverseOrder)
+        fix = size - 1;
+
     for (int i = 0; i < size; ++i)
-        result[i] = toJS(WKArrayGetItemAtIndex(array, i));
+        result[i] = toJS(WKArrayGetItemAtIndex(array, std::abs(fix - i)));
 
     return result;
 }

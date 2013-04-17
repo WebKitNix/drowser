@@ -50,6 +50,7 @@ public:
     void loadUrl(const std::string& url);
     void back();
     void forward();
+    void reload();
 
 private:
     int m_id;

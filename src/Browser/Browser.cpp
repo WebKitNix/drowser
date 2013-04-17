@@ -155,6 +155,7 @@ void Browser::initUi()
     m_glue->bind("_toolBarHeightChanged", this, &Browser::toolBarHeightChanged);
     m_glue->bind("_setCurrentTab", this, &Browser::setCurrentTab);
     m_glue->bind("_loadUrl", this, &Browser::loadUrlOnCurrentTab);
+    m_glue->bindToDispatcher("_reload", this, &Tab::reload);
     m_glue->bindToDispatcher("_back", this, &Tab::back);
 
     std::string uiHtml = getUiFile();

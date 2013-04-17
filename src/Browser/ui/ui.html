@@ -72,6 +72,7 @@ $(document).ready(function() {
         window._loadUrl = foo;
         window._back = foo;
         window._forward = foo;
+        window._reload = foo;
     }
 
     progressBarBgMargin = parseInt($("#progressBarFill").css("margin-left"));
@@ -237,6 +238,11 @@ function goForward()
     window._forward();
 }
 
+function reload()
+{
+    window._reload();
+}
+
 </script>
 </head>
 <body>
@@ -246,7 +252,7 @@ function goForward()
     <div class="toolBarRow">
         <div id="btnBack" onclick="goBack();"></div>
         <div id="btnForward" onclick="goForward();"></div>
-        <div id="btnRefresh" onClick=""></div>
+        <div id="btnReload" onClick="reload();"></div>
 
         <!-- Url bar -->
         <div id="urlBarBg">

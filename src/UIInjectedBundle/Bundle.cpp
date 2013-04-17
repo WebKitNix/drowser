@@ -114,6 +114,7 @@ void Bundle::registerAPI()
         "_setCurrentTab",
         "_back",
         "_forward",
+        "_reload",
         0
     };
     for (int i = 0; funcs[i]; ++i)

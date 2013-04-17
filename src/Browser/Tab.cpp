@@ -173,3 +173,8 @@ void Tab::forward()
     if (WKPageCanGoForward(m_page))
         WKPageGoForward(m_page);
 }
+
+void Tab::reload()
+{
+    WKPageReload(m_page);
+}

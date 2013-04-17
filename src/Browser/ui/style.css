@@ -82,11 +82,11 @@
     background-image: url(./images/btn_forward.png);
 }
 
-#btnRefresh {
+#btnReload {
     width: 34px;
     height: 36px;
     float: left;
-    background-image: url(./images/btn_refresh.png);
+    background-image: url(./images/btn_reload.png);
 }
 
 /* URL bar */

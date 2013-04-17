@@ -27,6 +27,7 @@
 #include <iostream>
 #include <cstring>
 #include <WebKit2/WKContext.h>
+#include <WebKit2/WKError.h>
 #include <WebKit2/WKNumber.h>
 #include <WebKit2/WKPage.h>
 #include <WebKit2/WKFrame.h>
@@ -70,6 +71,7 @@ Tab::Tab(int id, Browser* browser)
     loaderClient.didChangeProgress = &Tab::onChangeProgressCallback;
     loaderClient.didFinishProgress = &Tab::onFinishProgressCallback;
     loaderClient.didReceiveTitleForFrame = &Tab::onReceiveTitleForFrame;
+    loaderClient.didFailProvisionalLoadWithErrorForFrame = &Tab::onFailProvisionalLoadWithErrorForFrameCallback;
 
     WKPageSetPageLoaderClient(m_page, &loaderClient);
 }
@@ -113,6 +115,16 @@ void Tab::onReceiveTitleForFrame(WKPageRef page, WKStringRef title, WKFrameRef f
 
     if (page == self->m_page && WKFrameIsMainFrame(frame))
         postToBundle(self->m_browser->ui(), "titleChanged", self->m_id, title);
+}
+
+void Tab::onFailProvisionalLoadWithErrorForFrameCallback(WKPageRef page, WKFrameRef frame, WKErrorRef error, WKTypeRef, const void*)
+{
+    if (!WKFrameIsMainFrame(frame))
+        return;
+
+    WKStringRef wkErrorDescription = WKErrorCopyLocalizedDescription(error);
+    WKPageLoadPlainTextString(page, wkErrorDescription);
+    WKRelease(wkErrorDescription);
 }
 
 void Tab::setSize(WKSize size)

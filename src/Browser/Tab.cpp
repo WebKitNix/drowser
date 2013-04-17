@@ -112,9 +112,14 @@ void Tab::onViewNeedsDisplayCallback(NIXView, WKRect, const void* clientInfo)
 void Tab::onReceiveTitleForFrame(WKPageRef page, WKStringRef title, WKFrameRef frame, WKTypeRef, const void* clientInfo)
 {
     Tab* self = ((Tab*)clientInfo);
+    WKURLRef url = WKPageCopyActiveURL(page);
+    WKStringRef urlString = WKURLCopyString(url);
+    WKRelease(url);
 
     if (page == self->m_page && WKFrameIsMainFrame(frame))
-        postToBundle(self->m_browser->ui(), "titleChanged", self->m_id, title);
+        postToBundle(self->m_browser->ui(), "titleAndURLChanged", self->m_id, title, urlString);
+
+    WKRelease(urlString);
 }
 
 void Tab::onFailProvisionalLoadWithErrorForFrameCallback(WKPageRef page, WKFrameRef frame, WKErrorRef error, WKTypeRef, const void*)

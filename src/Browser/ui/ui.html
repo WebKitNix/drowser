@@ -120,11 +120,16 @@ function openUrls()
         addTab(arguments[i]);
 }
 
-function titleChanged(tabId, title)
+function titleAndURLChanged(tabId, title, url)
 {
     var tab = document.getElementById(String(tabId));
-    if (tab)
+    if (tab) {
+        if (activeTab === tab)
+            document.getElementById("urlBar").innerHTML = url;
+
+        tab._url = url;
         tab.firstChild.innerText = title;
+    }
 }
 
 function updateTabHeight()

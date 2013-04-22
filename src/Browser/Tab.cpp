@@ -78,10 +78,10 @@ Tab::Tab(int id, Browser* browser)
 
 Tab::~Tab()
 {
-    NIXViewRelease(m_view);
-    // BUG WKPageTerminate always crash after Nix merge ebddb6a20c6e456556560281c7a4279d48f2cacc
-    // WKPageTerminate(m_page);
+    WKPageTerminate(m_page);
     WKRelease(m_context);
+
+    NIXViewRelease(m_view);
 }
 
 void Tab::onStartProgressCallback(WKPageRef, const void* clientInfo)

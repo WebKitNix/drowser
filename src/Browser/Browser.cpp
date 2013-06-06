@@ -72,7 +72,7 @@ Browser::~Browser()
     WKRelease(m_contentPageGroup);
 
     g_main_loop_unref(m_mainLoop);
-    NIXViewRelease(m_uiView);
+    WKRelease(m_uiView);
     WKRelease(m_uiContext);
     delete m_window;
     delete m_glue;
@@ -127,26 +127,25 @@ void Browser::initUi()
     WKPreferencesRef preferences = WKPageGroupGetPreferences(m_uiPageGroup);
     WKPreferencesSetAcceleratedCompositingEnabled(preferences, true);
 
-    m_uiView = NIXViewCreate(m_uiContext, m_uiPageGroup);
+    m_uiView = WKViewCreate(m_uiContext, m_uiPageGroup);
 
-    NIXViewClient client;
-    std::memset(&client, 0, sizeof(NIXViewClient));
-    client.version = kNIXViewClientCurrentVersion;
+    WKViewClient client;
+    std::memset(&client, 0, sizeof(WKViewClient));
+    client.version = kWKViewClientCurrentVersion;
     client.clientInfo = this;
-    client.viewNeedsDisplay = [](NIXView, WKRect, const void* client) {
+    client.viewNeedsDisplay = [](WKViewRef, WKRect, const void* client) {
         ((Browser*)client)->scheduleUpdateDisplay();
     };
-    client.webProcessCrashed = [](NIXView, const OpaqueWKString*, const void*) {
+    client.webProcessCrashed = [](WKViewRef, WKURLRef, const void*) {
         puts("UI Webprocess crashed :-(");
     };
 
-    NIXViewSetViewClient(m_uiView, &client);
-    NIXViewInitialize(m_uiView);
-    NIXViewSetFocused(m_uiView, true);
-    NIXViewSetVisible(m_uiView, true);
-    NIXViewSetActive(m_uiView, true);
-    NIXViewSetSize(m_uiView, m_window->size());
-    m_uiPage = NIXViewGetPage(m_uiView);
+    WKViewSetViewClient(m_uiView, &client);
+    WKViewInitialize(m_uiView);
+    WKViewSetIsFocused(m_uiView, true);
+    WKViewSetIsVisible(m_uiView, true);
+    WKViewSetSize(m_uiView, m_window->size());
+    m_uiPage = WKViewGetPage(m_uiView);
 
     m_glue = new InjectedBundleGlue(m_uiContext);
     m_glue->bind("didUiReady", this, &Browser::didUiReady);
@@ -160,7 +159,7 @@ void Browser::initUi()
 
     std::string uiHtml = getUiFile();
     WKURLRef wkUrl = WKURLCreateWithUTF8CString(("file://" + uiHtml).c_str());
-    WKPageLoadURL(NIXViewGetPage(m_uiView), wkUrl);
+    WKPageLoadURL(WKViewGetPage(m_uiView), wkUrl);
     WKRelease(wkUrl);
 
     wkStr = WKStringCreateWithUTF8CString("Content");
@@ -263,7 +262,7 @@ void Browser::onWindowSizeChange(WKSize size)
     if (!m_uiView)
         return;
 
-    NIXViewSetSize(m_uiView, size);
+    WKViewSetSize(m_uiView, size);
 
     // FIXME: Procrastinate this relayout on non visible tabs
     WKSize contentsSize = this->contentsSize();
@@ -311,10 +310,10 @@ void Browser::updateDisplay()
     glClearColor(1.0, 1.0, 1.0, 1.0);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    NIXViewPaintToCurrentGLContext(m_uiView);
+    WKViewPaintToCurrentGLContext(m_uiView);
 
     if (m_currentTab != -1)
-        NIXViewPaintToCurrentGLContext(currentTab()->webView());
+        WKViewPaintToCurrentGLContext(currentTab()->webView());
 
     m_window->swapBuffers();
 }
@@ -334,7 +333,7 @@ void Browser::addTab(const int& tabId)
     assert(m_tabs.count(tabId) == 0);
 
     Tab* tab = new Tab(tabId, this);
-    tab->setViewportTransformation(&m_webViewsTransform);
+    tab->setViewportTranslation(0, m_toolBarHeight);
     m_tabs[tabId] = tab;
     tab->setSize(contentsSize());
 
@@ -356,13 +355,12 @@ void Browser::closeTab(const int& tabId)
 void Browser::toolBarHeightChanged(const int& height)
 {
     m_toolBarHeight = height;
-    m_webViewsTransform = NIXMatrixMakeTranslation(0, m_toolBarHeight);
 
     // FIXME: Better to delay this global relayout in a near future
     WKSize contentsSize = this->contentsSize();
     for (auto p : m_tabs) {
         Tab* tab = p.second;
-        tab->setViewportTransformation(&m_webViewsTransform);
+        tab->setViewportTranslation(0, m_toolBarHeight);
         tab->setSize(contentsSize);
     }
 }
@@ -372,7 +370,7 @@ void Browser::setCurrentTab(const int& tabId)
     if (!m_tabs.count(tabId))
         return;
     m_currentTab = tabId;
-    NIXViewSetSize(currentTab()->webView(), contentsSize());
+    WKViewSetSize(currentTab()->webView(), contentsSize());
 }
 
 void Browser::loadUrlOnCurrentTab(const std::string& url)

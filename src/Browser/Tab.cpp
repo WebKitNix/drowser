@@ -48,20 +48,19 @@ Tab::Tab(int id, Browser* browser)
     m_context = WKContextCreateWithInjectedBundlePath(wkStr);
     WKRelease(wkStr);
 
-    m_view = NIXViewCreate(m_context, browser->contentPageGroup());
-    NIXViewInitialize(m_view);
-    NIXViewSetFocused(m_view, true);
-    NIXViewSetVisible(m_view, true);
-    NIXViewSetActive(m_view, true);
-    m_page = NIXViewGetPage(m_view);
+    m_view = WKViewCreate(m_context, browser->contentPageGroup());
+    WKViewInitialize(m_view);
+    WKViewSetIsFocused(m_view, true);
+    WKViewSetIsVisible(m_view, true);
+    m_page = WKViewGetPage(m_view);
 
-    NIXViewClient client;
-    std::memset(&client, 0, sizeof(NIXViewClient));
-    client.version = kNIXViewClientCurrentVersion;
+    WKViewClient client;
+    std::memset(&client, 0, sizeof(WKViewClient));
+    client.version = kWKViewClientCurrentVersion;
     client.clientInfo = this;
     client.viewNeedsDisplay = &Tab::onViewNeedsDisplayCallback;
 
-    NIXViewSetViewClient(m_view, &client);
+    WKViewSetViewClient(m_view, &client);
 
     WKPageLoaderClient loaderClient;
     memset(&loaderClient, 0, sizeof(WKPageLoaderClient));
@@ -81,7 +80,7 @@ Tab::~Tab()
     WKPageTerminate(m_page);
     WKRelease(m_context);
 
-    NIXViewRelease(m_view);
+    WKRelease(m_view);
 }
 
 void Tab::onStartProgressCallback(WKPageRef, const void* clientInfo)
@@ -102,7 +101,7 @@ void Tab::onFinishProgressCallback(WKPageRef, const void* clientInfo)
     postToBundle(self->m_browser->ui(), "progressFinished", self->m_id);
 }
 
-void Tab::onViewNeedsDisplayCallback(NIXView, WKRect, const void* clientInfo)
+void Tab::onViewNeedsDisplayCallback(WKViewRef, WKRect, const void* clientInfo)
 {
     Tab* self = ((Tab*)clientInfo);
     // FIXME: Only do this is the tab is visible!
@@ -134,7 +133,7 @@ void Tab::onFailProvisionalLoadWithErrorForFrameCallback(WKPageRef page, WKFrame
 
 void Tab::setSize(WKSize size)
 {
-    NIXViewSetSize(m_view, size);
+    WKViewSetSize(m_view, size);
 }
 
 void Tab::sendKeyEvent(NIXKeyEvent* event)
@@ -154,9 +153,9 @@ void Tab::sendMouseEvent<NIXMouseEvent*>(NIXMouseEvent* event)
     NIXViewSendMouseEvent(m_view, event);
 }
 
-void Tab::setViewportTransformation(NIXMatrix* matrix)
+void Tab::setViewportTranslation(int left, int top)
 {
-    NIXViewSetUserViewportTransformation(m_view, matrix);
+    WKViewSetUserViewportTranslation(m_view, left, top);
 }
 
 void Tab::loadUrl(const std::string& url)

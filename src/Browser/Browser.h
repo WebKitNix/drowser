@@ -88,18 +88,16 @@ private:
     DesktopWindow* m_window;
     InjectedBundleGlue* m_glue;
 
-    NIXView m_uiView;
+    WKViewRef m_uiView;
     WKPageRef m_uiPage;
     WKContextRef m_uiContext;
     WKPageGroupRef m_uiPageGroup;
 
     bool m_uiFocused;
     int m_toolBarHeight;
-    NIXMatrix m_webViewsTransform;
 
     std::map<int, Tab*> m_tabs;
     int m_currentTab;
-    NIXMatrix m_webTransform;
     WKPageGroupRef m_contentPageGroup;
 
     const std::vector<std::string>& m_initialUrls;

@@ -39,13 +39,13 @@ public:
     ~Tab();
 
     // temporary method while things is changing
-    NIXView webView() { return m_view; }
+    WKViewRef webView() { return m_view; }
     void setSize(WKSize);
     void sendKeyEvent(NIXKeyEvent*);
     template<typename T>
     void sendMouseEvent(T);
 
-    void setViewportTransformation(NIXMatrix*);
+    void setViewportTranslation(int left, int top);
 
     void loadUrl(const std::string& url);
     void back();
@@ -55,11 +55,11 @@ public:
 private:
     int m_id;
     Browser* m_browser;
-    NIXView m_view;
+    WKViewRef m_view;
     WKPageRef m_page;
     WKContextRef m_context;
 
-    static void onViewNeedsDisplayCallback(NIXView, WKRect, const void* clientInfo);
+    static void onViewNeedsDisplayCallback(WKViewRef, WKRect, const void* clientInfo);
     static void onStartProgressCallback(WKPageRef, const void* clientInfo);
     static void onChangeProgressCallback(WKPageRef, const void* clientInfo);
     static void onFinishProgressCallback(WKPageRef, const void* clientInfo);

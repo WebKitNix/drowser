@@ -25,6 +25,7 @@
 
 #include "Tab.h"
 #include <iostream>
+#include <cassert>
 #include <cstring>
 #include <WebKit2/WKContext.h>
 #include <WebKit2/WKError.h>
@@ -33,6 +34,7 @@
 #include <WebKit2/WKFrame.h>
 #include <WebKit2/WKString.h>
 #include <WebKit2/WKURL.h>
+#include <WebKit2/WKURLRequest.h>
 #include <WebKit2/WKType.h>
 #include <WebKit2/WKPreferences.h>
 #include <WebKit2/WKPreferencesPrivate.h>
@@ -73,6 +75,14 @@ Tab::Tab(int id, Browser* browser)
     loaderClient.didFailProvisionalLoadWithErrorForFrame = &Tab::onFailProvisionalLoadWithErrorForFrameCallback;
 
     WKPageSetPageLoaderClient(m_page, &loaderClient);
+
+    WKPageUIClient uiClient;
+    memset(&uiClient, 0, sizeof(WKPageUIClient));
+    uiClient.version = kWKPageUIClientCurrentVersion;
+    uiClient.clientInfo = this;
+    uiClient.createNewPage = &Tab::createNewPageCallback;
+
+    WKPageSetPageUIClient(m_page, &uiClient);
 }
 
 Tab::~Tab()
@@ -129,6 +139,24 @@ void Tab::onFailProvisionalLoadWithErrorForFrameCallback(WKPageRef page, WKFrame
     WKStringRef wkErrorDescription = WKErrorCopyLocalizedDescription(error);
     WKPageLoadPlainTextString(page, wkErrorDescription);
     WKRelease(wkErrorDescription);
+}
+
+WKPageRef Tab::createNewPageCallback(WKPageRef, WKURLRequestRef urlRequest, WKDictionaryRef, WKEventModifiers, WKEventMouseButton, const void* clientInfo)
+{
+    WKURLRef urlRef = WKURLRequestCopyURL(urlRequest);
+    assert(urlRef);
+
+    // TODO: it would be nice to have a synchronous version of
+    // postToBundle, so we may know the tab was created and the
+    // loaded page could be retrieved and returned.
+    Tab* self = ((Tab*)clientInfo);
+    WKStringRef urlStr = WKURLCopyString(urlRef);
+    postToBundle(self->m_browser->ui(), "addTab", urlStr);
+
+    WKRelease(urlStr);
+    WKRelease(urlRef);
+
+    return 0;
 }
 
 void Tab::setSize(WKSize size)

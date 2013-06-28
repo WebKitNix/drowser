@@ -65,6 +65,7 @@ private:
     static void onFinishProgressCallback(WKPageRef, const void* clientInfo);
     static void onReceiveTitleForFrame(WKPageRef page, WKStringRef title, WKFrameRef frame, WKTypeRef userData, const void* clientInfo);
     static void onFailProvisionalLoadWithErrorForFrameCallback(WKPageRef, WKFrameRef, WKErrorRef, WKTypeRef, const void*);
+    static WKPageRef createNewPageCallback(WKPageRef, WKURLRequestRef, WKDictionaryRef, WKEventModifiers, WKEventMouseButton, const void*);
 };
 
 #endif

@@ -149,7 +149,7 @@ void Browser::initUi()
 
     m_glue = new InjectedBundleGlue(m_uiContext);
     m_glue->bind("didUiReady", this, &Browser::didUiReady);
-    m_glue->bind("_addTab", this, &Browser::addTab);
+    m_glue->bind("_requestTab", this, &Browser::requestTab);
     m_glue->bind("_closeTab", this, &Browser::closeTab);
     m_glue->bind("_toolBarHeightChanged", this, &Browser::toolBarHeightChanged);
     m_glue->bind("_setCurrentTab", this, &Browser::setCurrentTab);
@@ -325,19 +325,21 @@ Tab* Browser::currentTab()
 
 void Browser::didUiReady()
 {
-    postToBundle(m_uiPage, "openUrls", m_initialUrls);
+    if (m_initialUrls.empty())
+        requestTab();
+
+    for (const std::string& url : m_initialUrls)
+        requestTab()->loadUrl(url);
 }
 
-void Browser::addTab(const int& tabId)
+Tab* Browser::requestTab()
 {
-    assert(m_tabs.count(tabId) == 0);
-
-    Tab* tab = new Tab(tabId, this);
+    Tab* tab = new Tab(this);
     tab->setViewportTranslation(0, m_toolBarHeight);
-    m_tabs[tabId] = tab;
+    m_tabs[tab->id()] = tab;
     tab->setSize(contentsSize());
-
-    m_currentTab = tabId;
+    postToBundle(m_uiPage, "tabAdded", tab->id());
+    return tab;
 }
 
 void Browser::closeTab(const int& tabId)

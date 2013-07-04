@@ -108,7 +108,7 @@ void Bundle::registerAPI()
     assert(m_jsContext);
 
     const char* funcs[] = {
-        "_addTab",
+        "_requestTab",
         "_closeTab",
         "_toolBarHeightChanged",
         "_loadUrl",

@@ -31,7 +31,6 @@
 <script type="text/javascript">
 
 activeTab = null;
-nextId = 0;
 progressBarBgMargin = 0;
 progressBarVisible = false;
 
@@ -57,9 +56,9 @@ $(document).ready(function() {
         activeTab._url = urlBar.text()
     });
 
-    $("#plus").click(function() { addTab() });
+    $("#plus").click(function() { _requestTab() });
 
-    $(document).bind('keydown', 'ctrl+t', function() { addTab(); return false; });
+    $(document).bind('keydown', 'ctrl+t', function() { _requestTab(); return false; });
     $(document).bind('keydown', 'ctrl+w', function() { closeTab(); return false; });
 
     // Function stubs to debug UI on a browser
@@ -109,17 +108,6 @@ function progressChanged(tabId, value)
         $("#progressBar").width(($("#urlBarBgFill").width() * value) + progressBarBgMargin);
 }
 
-function openUrls()
-{
-    if (!arguments.length) {
-        addTab();
-        return;
-    }
-
-    for (var i = 0; i < arguments.length; i++)
-        addTab(arguments[i]);
-}
-
 function titleAndURLChanged(tabId, title, url)
 {
     var tab = document.getElementById(String(tabId));
@@ -137,12 +125,11 @@ function updateTabHeight()
     window._toolBarHeightChanged($("#tabBar").height() + 36);
 }
 
-function addTab(url)
+function tabAdded(tabId)
 {
     var tabBar = $("#tabBar");
     var barHeight = tabBar.height();
 
-    var tabId = nextId++;
     var tabElem = document.createElement("span");
     tabElem.className = "tabDeco";
     var contents = document.createElement("span");
@@ -160,16 +147,13 @@ function addTab(url)
     tabElem.onclick = function() { selectTab(tabElem); }
     $("#plus").before(tabElem);
 
-    tabElem._url = url ? url : "http://";
+    tabElem._url = "http://";
     $("#urlBar").text(tabElem._url);
 
     if (barHeight < tabBar.height())
         updateTabHeight();
 
-    window._addTab(tabId);
     selectTab(tabElem);
-    if (url)
-        loadUrl();
 }
 
 function selectTab(obj)

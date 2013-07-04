@@ -41,8 +41,10 @@
 #include "Browser.h"
 #include "InjectedBundleGlue.h"
 
-Tab::Tab(int id, Browser* browser)
-    : m_id(id)
+static int nextTabId = 0;
+
+Tab::Tab(Browser* browser)
+    : m_id(nextTabId++)
     , m_browser(browser)
 {
     // FIXME Find a good way to find where the injected bundle is
@@ -146,16 +148,15 @@ WKPageRef Tab::createNewPageCallback(WKPageRef, WKURLRequestRef urlRequest, WKDi
     WKURLRef urlRef = WKURLRequestCopyURL(urlRequest);
     assert(urlRef);
 
-    // TODO: it would be nice to have a synchronous version of
-    // postToBundle, so we may know the tab was created and the
-    // loaded page could be retrieved and returned.
     Tab* self = ((Tab*)clientInfo);
     WKStringRef urlStr = WKURLCopyString(urlRef);
-    postToBundle(self->m_browser->ui(), "addTab", urlStr);
+    Tab* newTab = self->m_browser->requestTab();
+    newTab->loadUrl(fromWK<std::string>(urlStr));
 
     WKRelease(urlStr);
     WKRelease(urlRef);
 
+    // FIXME: This must return newTab->m_page and the tabs must share the same context.
     return 0;
 }
 

@@ -63,7 +63,7 @@ public:
     virtual void onWindowClose();
 
     void didUiReady();
-    void addTab(const int& tabId);
+    Tab* requestTab();
     void closeTab(const int& tabId);
     void toolBarHeightChanged(const int& height);
     void setCurrentTab(const int& tabId);

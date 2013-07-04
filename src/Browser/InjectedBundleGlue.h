@@ -62,16 +62,16 @@ class InjectedBundleGlue
 public:
     InjectedBundleGlue(WKContextRef);
 
-    template<typename Obj, typename Param>
-    void bind(const char* messageName, Obj* obj, void (Obj::*method)(const Param&))
+    template<typename Return, typename Obj, typename Param>
+    void bind(const char* messageName, Obj* obj, Return (Obj::*method)(const Param&))
     {
         m_bindMap[messageName] = [obj,method](WKTypeRef msgBody) {
             (obj->*method)(fromWK<Param>(msgBody));
         };
     }
 
-    template<typename Obj>
-    void bind(const char* messageName, Obj* obj, void (Obj::*method)())
+    template<typename Return, typename Obj>
+    void bind(const char* messageName, Obj* obj, Return (Obj::*method)())
     {
         m_bindMap[messageName] = [obj,method](WKTypeRef msgBody) {
             (obj->*method)();

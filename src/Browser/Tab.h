@@ -35,8 +35,10 @@ class Browser;
 
 class Tab {
 public:
-    Tab(int id, Browser* browser);
+    Tab(Browser* browser);
     ~Tab();
+
+    int id() const { return m_id; }
 
     // temporary method while things is changing
     WKViewRef webView() { return m_view; }

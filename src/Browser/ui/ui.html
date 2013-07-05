@@ -108,7 +108,13 @@ function progressChanged(tabId, value)
         $("#progressBar").width(($("#urlBarBgFill").width() * value) + progressBarBgMargin);
 }
 
-function titleAndURLChanged(tabId, title, url)
+function titleChanged(tabId, title)
+{
+    var tab = document.getElementById(String(tabId));
+    tab.firstChild.innerText = title;
+}
+
+function urlChanged(tabId, url)
 {
     var tab = document.getElementById(String(tabId));
     if (tab) {
@@ -116,7 +122,7 @@ function titleAndURLChanged(tabId, title, url)
             document.getElementById("urlBar").innerHTML = url;
 
         tab._url = url;
-        tab.firstChild.innerText = title;
+        tab.firstChild.innerText = url;
     }
 }
 

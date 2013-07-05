@@ -73,6 +73,7 @@ Tab::Tab(Browser* browser)
     loaderClient.didStartProgress = &Tab::onStartProgressCallback;
     loaderClient.didChangeProgress = &Tab::onChangeProgressCallback;
     loaderClient.didFinishProgress = &Tab::onFinishProgressCallback;
+    loaderClient.didCommitLoadForFrame = &Tab::onCommitLoadForFrame;
     loaderClient.didReceiveTitleForFrame = &Tab::onReceiveTitleForFrame;
     loaderClient.didFailProvisionalLoadWithErrorForFrame = &Tab::onFailProvisionalLoadWithErrorForFrameCallback;
 
@@ -113,6 +114,20 @@ void Tab::onFinishProgressCallback(WKPageRef, const void* clientInfo)
     postToBundle(self->m_browser->ui(), "progressFinished", self->m_id);
 }
 
+void Tab::onCommitLoadForFrame(WKPageRef page, WKFrameRef frame, WKTypeRef, const void *clientInfo)
+{
+    Tab* self = ((Tab*)clientInfo);
+
+    if (page != self->m_page || !WKFrameIsMainFrame(frame))
+        return;
+
+    WKURLRef url = WKPageCopyActiveURL(page);
+    WKStringRef urlString = WKURLCopyString(url);
+    postToBundle(self->m_browser->ui(), "urlChanged", self->m_id, urlString);
+    WKRelease(url);
+    WKRelease(urlString);
+}
+
 void Tab::onViewNeedsDisplayCallback(WKViewRef, WKRect, const void* clientInfo)
 {
     Tab* self = ((Tab*)clientInfo);
@@ -123,14 +138,11 @@ void Tab::onViewNeedsDisplayCallback(WKViewRef, WKRect, const void* clientInfo)
 void Tab::onReceiveTitleForFrame(WKPageRef page, WKStringRef title, WKFrameRef frame, WKTypeRef, const void* clientInfo)
 {
     Tab* self = ((Tab*)clientInfo);
-    WKURLRef url = WKPageCopyActiveURL(page);
-    WKStringRef urlString = WKURLCopyString(url);
-    WKRelease(url);
 
-    if (page == self->m_page && WKFrameIsMainFrame(frame))
-        postToBundle(self->m_browser->ui(), "titleAndURLChanged", self->m_id, title, urlString);
+    if (page != self->m_page || !WKFrameIsMainFrame(frame))
+        return;
 
-    WKRelease(urlString);
+    postToBundle(self->m_browser->ui(), "titleChanged", self->m_id, title);
 }
 
 void Tab::onFailProvisionalLoadWithErrorForFrameCallback(WKPageRef page, WKFrameRef frame, WKErrorRef error, WKTypeRef, const void*)

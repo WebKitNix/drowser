@@ -82,6 +82,8 @@ public:
 
     void scheduleUpdateDisplay();
 
+    DesktopWindow* window() { return m_window; }
+
 private:
     GMainLoop* m_mainLoop;
     bool m_displayUpdateScheduled;

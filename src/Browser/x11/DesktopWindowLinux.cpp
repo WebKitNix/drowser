@@ -27,6 +27,7 @@
 #include <X11/X.h>
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
+#include <X11/cursorfont.h>
 #include <GL/glx.h>
 
 #include "FatalError.h"
@@ -54,7 +55,7 @@ public:
     ~DesktopWindowLinux();
     void makeCurrent();
     void swapBuffers();
-
+    void setMouseCursor(MouseCursor cursor);
 private:
     void setup();
     void destroyGLContext();
@@ -68,6 +69,8 @@ private:
     XlibEventSource* m_eventSource;
     Display* m_display;
     Window m_window;
+    Cursor m_cursor;
+    unsigned int m_currentX11Cursor;
 
     double m_lastClickTime;
     int m_lastClickX;
@@ -85,6 +88,8 @@ DesktopWindowLinux::DesktopWindowLinux(DesktopWindowClient* client, int width, i
     : DesktopWindow(client, width, height)
     , m_eventSource(0)
     , m_display(0)
+    , m_cursor(0)
+    , m_currentX11Cursor(XC_left_ptr)
     , m_lastClickTime(0)
     , m_lastClickX(0)
     , m_lastClickY(0)
@@ -104,6 +109,8 @@ DesktopWindowLinux::~DesktopWindowLinux()
     delete m_eventSource;
     destroyGLContext();
     XDestroyWindow(m_display, m_window);
+    if (m_cursor)
+        XFreeCursor(m_display, m_cursor);
     XCloseDisplay(m_display);
 }
 
@@ -353,3 +360,26 @@ void DesktopWindowLinux::updateSizeIfNeeded(int width, int height)
         m_client->onWindowSizeChange(m_size);
 }
 
+void DesktopWindowLinux::setMouseCursor(MouseCursor cursor)
+{
+    unsigned int x11Cursor;
+    switch (cursor) {
+        case Arrow:
+            x11Cursor = XC_left_ptr;
+            break;
+        case Hand:
+            x11Cursor = XC_hand2;
+            break;
+    }
+
+    if (m_currentX11Cursor == x11Cursor)
+        return;
+
+    if (m_cursor) {
+        XFreeCursor(m_display, m_cursor);
+        m_cursor = 0;
+    }
+    m_cursor = XCreateFontCursor(m_display, x11Cursor);
+    XDefineCursor(m_display, m_window, m_cursor);
+    m_currentX11Cursor = x11Cursor;
+}

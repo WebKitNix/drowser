@@ -39,6 +39,7 @@
 #include <WebKit2/WKType.h>
 #include <WebKit2/WKPreferences.h>
 #include <WebKit2/WKPreferencesPrivate.h>
+#include <WebKit2/WKHitTestResult.h>
 #include "Browser.h"
 #include "InjectedBundleGlue.h"
 
@@ -85,6 +86,7 @@ Tab::Tab(Browser* browser)
     uiClient.version = kWKPageUIClientCurrentVersion;
     uiClient.clientInfo = this;
     uiClient.createNewPage = &Tab::createNewPageCallback;
+    uiClient.mouseDidMoveOverElement = &Tab::onMouseDidMoveOverElement;
 
     WKPageSetPageUIClient(m_page, &uiClient);
 }
@@ -171,6 +173,19 @@ WKPageRef Tab::createNewPageCallback(WKPageRef, WKURLRequestRef urlRequest, WKDi
 
     // FIXME: This must return newTab->m_page and the tabs must share the same context.
     return 0;
+}
+
+void Tab::onMouseDidMoveOverElement(WKPageRef, WKHitTestResultRef hitTestResult, WKEventModifiers, WKTypeRef, const void *clientInfo)
+{
+    Tab* self = ((Tab*)clientInfo);
+
+    WKURLRef url = WKHitTestResultCopyAbsoluteLinkURL(hitTestResult);
+    if (url) {
+        self->m_browser->window()->setMouseCursor(DesktopWindow::Hand);
+        WKRelease(url);
+    } else {
+        self->m_browser->window()->setMouseCursor(DesktopWindow::Arrow);
+    }
 }
 
 void Tab::setSize(WKSize size)

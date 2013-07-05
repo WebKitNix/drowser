@@ -68,7 +68,9 @@ private:
     static void onCommitLoadForFrame(WKPageRef page, WKFrameRef frame, WKTypeRef userData, const void *clientInfo);
     static void onReceiveTitleForFrame(WKPageRef page, WKStringRef title, WKFrameRef frame, WKTypeRef userData, const void* clientInfo);
     static void onFailProvisionalLoadWithErrorForFrameCallback(WKPageRef, WKFrameRef, WKErrorRef, WKTypeRef, const void*);
+
     static WKPageRef createNewPageCallback(WKPageRef, WKURLRequestRef, WKDictionaryRef, WKEventModifiers, WKEventMouseButton, const void*);
+    static void onMouseDidMoveOverElement(WKPageRef, WKHitTestResultRef, WKEventModifiers, WKTypeRef, const void*);
 };
 
 #endif

@@ -25,6 +25,7 @@
 
 #include "Tab.h"
 #include <iostream>
+#include <fstream>
 #include <cassert>
 #include <cstring>
 #include <WebKit2/WKContext.h>
@@ -199,10 +200,28 @@ void Tab::setViewportTranslation(int left, int top)
     WKViewSetUserViewportTranslation(m_view, left, top);
 }
 
+static bool hasValidPrefix(const std::string& url)
+{
+    const char* validPrefixes[] = {"http://" , "https://", "file://", "ftp://", 0};
+    for (const char* prefix : validPrefixes) {
+        if (url.find(prefix) == 0)
+            return true;
+    }
+    return false;
+}
+
 void Tab::loadUrl(const std::string& url)
 {
-    printf("Load URL: %s\n", url.c_str());
-    WKURLRef wkUrl = WKURLCreateWithUTF8CString(url.c_str());
+    std::string fixedUrl(url);
+    if (!hasValidPrefix(fixedUrl)) {
+        if (std::ifstream(fixedUrl.c_str()))
+            fixedUrl.insert(0, "file:///");
+        else
+            fixedUrl.insert(0, "http://");
+    }
+
+    std::cout << "Load URL: " << fixedUrl << std::endl;
+    WKURLRef wkUrl = WKURLCreateWithUTF8CString(fixedUrl.c_str());
     WKPageLoadURL(m_page, wkUrl);
     WKRelease(wkUrl);
 }

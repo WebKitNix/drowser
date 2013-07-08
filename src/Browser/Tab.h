@@ -36,6 +36,7 @@ class Browser;
 class Tab {
 public:
     Tab(Browser* browser);
+    Tab(Tab* parent);
     ~Tab();
 
     int id() const { return m_id; }
@@ -60,6 +61,8 @@ private:
     WKViewRef m_view;
     WKPageRef m_page;
     WKContextRef m_context;
+
+    void init();
 
     static void onViewNeedsDisplayCallback(WKViewRef, WKRect, const void* clientInfo);
     static void onStartProgressCallback(WKPageRef, const void* clientInfo);

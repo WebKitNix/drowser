@@ -53,8 +53,21 @@ Tab::Tab(Browser* browser)
     WKStringRef wkStr = WKStringCreateWithUTF8CString((getApplicationPath() + "/../ContentsInjectedBundle/libPageBundle.so").c_str());
     m_context = WKContextCreateWithInjectedBundlePath(wkStr);
     WKRelease(wkStr);
+    init();
+}
 
-    m_view = WKViewCreate(m_context, browser->contentPageGroup());
+Tab::Tab(Tab* parent)
+    : m_id(nextTabId++)
+    , m_browser(parent->m_browser)
+    , m_context(parent->m_context)
+{
+    WKRetain(m_context);
+    init();
+}
+
+void Tab::init()
+{
+    m_view = WKViewCreate(m_context, m_browser->contentPageGroup());
     WKViewInitialize(m_view);
     WKViewSetIsFocused(m_view, true);
     WKViewSetIsVisible(m_view, true);
@@ -93,7 +106,7 @@ Tab::Tab(Browser* browser)
 
 Tab::~Tab()
 {
-    WKPageTerminate(m_page);
+    WKPageClose(m_page);
     WKRelease(m_context);
 
     WKRelease(m_view);
@@ -158,21 +171,12 @@ void Tab::onFailProvisionalLoadWithErrorForFrameCallback(WKPageRef page, WKFrame
     WKRelease(wkErrorDescription);
 }
 
-WKPageRef Tab::createNewPageCallback(WKPageRef, WKURLRequestRef urlRequest, WKDictionaryRef, WKEventModifiers, WKEventMouseButton, const void* clientInfo)
+WKPageRef Tab::createNewPageCallback(WKPageRef, WKURLRequestRef, WKDictionaryRef, WKEventModifiers, WKEventMouseButton, const void* clientInfo)
 {
-    WKURLRef urlRef = WKURLRequestCopyURL(urlRequest);
-    assert(urlRef);
-
     Tab* self = ((Tab*)clientInfo);
-    WKStringRef urlStr = WKURLCopyString(urlRef);
-    Tab* newTab = self->m_browser->requestTab();
-    newTab->loadUrl(fromWK<std::string>(urlStr));
-
-    WKRelease(urlStr);
-    WKRelease(urlRef);
-
-    // FIXME: This must return newTab->m_page and the tabs must share the same context.
-    return 0;
+    Tab* newTab = self->m_browser->requestTab(self);
+    WKRetain(newTab->m_page);
+    return newTab->m_page;
 }
 
 void Tab::onMouseDidMoveOverElement(WKPageRef, WKHitTestResultRef hitTestResult, WKEventModifiers, WKTypeRef, const void *clientInfo)

@@ -332,9 +332,9 @@ void Browser::didUiReady()
         requestTab()->loadUrl(url);
 }
 
-Tab* Browser::requestTab()
+Tab* Browser::requestTab(Tab* parent)
 {
-    Tab* tab = new Tab(this);
+    Tab* tab = parent ? new Tab(parent) : new Tab(this);
     tab->setViewportTranslation(0, m_toolBarHeight);
     m_tabs[tab->id()] = tab;
     tab->setSize(contentsSize());

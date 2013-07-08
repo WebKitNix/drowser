@@ -72,6 +72,9 @@ void Tab::init()
     WKViewSetIsFocused(m_view, true);
     WKViewSetIsVisible(m_view, true);
     m_page = WKViewGetPage(m_view);
+    WKStringRef appName = WKStringCreateWithUTF8CString("Drowser");
+    WKPageSetApplicationNameForUserAgent(m_page, appName);
+    WKRelease(appName);
 
     WKViewClient client;
     std::memset(&client, 0, sizeof(WKViewClient));

@@ -217,7 +217,7 @@ void Tab::setViewportTranslation(int left, int top)
 
 static bool hasValidPrefix(const std::string& url)
 {
-    const char* validPrefixes[] = {"http://" , "https://", "file://", "ftp://", 0};
+    const char* validPrefixes[] = {"http://" , "https://", "file://", "ftp://"};
     for (const char* prefix : validPrefixes) {
         if (url.find(prefix) == 0)
             return true;

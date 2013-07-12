@@ -81,7 +81,7 @@ void Tab::init()
     client.version = kWKViewClientCurrentVersion;
     client.clientInfo = this;
     client.viewNeedsDisplay = &Tab::onViewNeedsDisplayCallback;
-
+    client.webProcessCrashed = &Tab::onWebProcessCrashedCallback; 
     WKViewSetViewClient(m_view, &client);
 
     WKPageLoaderClient loaderClient;
@@ -152,6 +152,12 @@ void Tab::onViewNeedsDisplayCallback(WKViewRef, WKRect, const void* clientInfo)
     Tab* self = ((Tab*)clientInfo);
     // FIXME: Only do this is the tab is visible!
     self->m_browser->scheduleUpdateDisplay();
+}
+
+void Tab::onWebProcessCrashedCallback(WKViewRef, WKURLRef, const void* clientInfo)
+{
+    const Tab* tab = reinterpret_cast<const Tab*>(clientInfo);
+    std::cerr << "Webprocess of tab " << tab->m_id << " crashed :-(" << std::endl;
 }
 
 void Tab::onReceiveTitleForFrame(WKPageRef page, WKStringRef title, WKFrameRef frame, WKTypeRef, const void* clientInfo)

@@ -65,6 +65,7 @@ private:
     void init();
 
     static void onViewNeedsDisplayCallback(WKViewRef, WKRect, const void* clientInfo);
+    static void onWebProcessCrashedCallback(WKViewRef, WKURLRef, const void* clientInfo);
     static void onStartProgressCallback(WKPageRef, const void* clientInfo);
     static void onChangeProgressCallback(WKPageRef, const void* clientInfo);
     static void onFinishProgressCallback(WKPageRef, const void* clientInfo);

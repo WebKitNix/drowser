@@ -22,7 +22,7 @@
 #include <gst/gst.h>
 #include <gst/pbutils/pbutils.h>
 
-using namespace WebKit;
+using namespace Nix;
 
 #ifndef GST_API_VERSION_1
 static void onGStreamerWavparsePadAddedCallback(GstElement* element, GstPad* pad, AudioDestination* destination)
@@ -31,7 +31,7 @@ static void onGStreamerWavparsePadAddedCallback(GstElement* element, GstPad* pad
 }
 #endif
 
-AudioDestination::AudioDestination(size_t bufferSize, unsigned numberOfInputChannels, unsigned numberOfChannels, double sampleRate, WebAudioDevice::RenderCallback* callback)
+AudioDestination::AudioDestination(size_t bufferSize, unsigned numberOfInputChannels, unsigned numberOfChannels, double sampleRate, AudioDevice::RenderCallback* callback)
     : m_wavParserAvailable(false)
     , m_audioSinkAvailable(false)
     , m_pipeline(0)

@@ -43,7 +43,7 @@ struct _WebKitWebAudioSrcClass {
 
 struct _WebKitWebAudioSourcePrivate {
     gfloat sampleRate;
-    WebKit::WebAudioDevice::RenderCallback* handler;
+    Nix::AudioDevice::RenderCallback* handler;
     guint framesToPull;
 
     GstElement* interleave; //FIXME: WILL LEAK!!!
@@ -319,7 +319,7 @@ static void webKitWebAudioSrcSetProperty(GObject* object, guint propertyId, cons
         priv->sampleRate = g_value_get_float(value);
         break;
     case PROP_HANDLER:
-        priv->handler = static_cast<WebKit::WebAudioDevice::RenderCallback*>(g_value_get_pointer(value));
+        priv->handler = static_cast<Nix::AudioDevice::RenderCallback*>(g_value_get_pointer(value));
         break;
     case PROP_FRAMES:
         priv->framesToPull = g_value_get_uint(value);
@@ -377,8 +377,8 @@ static void webKitWebAudioSrcLoop(WebKitWebAudioSrc* src)
     // FIXME: store audioData into priv???
     //const WebVector<float*>& sourceData, const WebVector<float*>& destinationData, size_t numberOfFrames) { };
     // FIXME: Add support for local/live audio input by passing sourceAudioData.
-    WebKit::WebVector<float*> sourceDataVector;
-    WebKit::WebVector<float*> audioDataVector((size_t) 2);
+    Nix::Vector<float*> sourceDataVector;
+    Nix::Vector<float*> audioDataVector((size_t) 2);
     audioDataVector[0] = audioData[0];
     audioDataVector[1] = audioData[1];
     priv->handler->render(sourceDataVector, audioDataVector, priv->framesToPull);

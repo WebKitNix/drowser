@@ -2,11 +2,11 @@
 #include "AudioFileReader.h"
 #include "AudioDestination.h"
 
-#include <NixPlatform/WebAudioBus.h>
+#include <NixPlatform/AudioBus.h>
 
 #include <cstdio>
 
-using namespace WebKit;
+using namespace Nix;
 
 bool initializeAudioBackend()
 {
@@ -18,17 +18,17 @@ bool initializeAudioBackend()
     return didInitialize;
 }
 
-bool PlatformClient::loadAudioResource(WebAudioBus* destinationBus, const char* audioFileData, size_t dataSize, double sampleRate)
+bool PlatformClient::loadAudioResource(AudioBus* destinationBus, const char* audioFileData, size_t dataSize, double sampleRate)
 {
     return AudioFileReader(audioFileData, dataSize).createBus(destinationBus, sampleRate);
 }
 
-WebData PlatformClient::loadResource(const char* name)
+Data PlatformClient::loadResource(const char* name)
 {
     return AudioFileReader::loadResource(name);
 }
 
-WebAudioDevice* PlatformClient::createAudioDevice(size_t bufferSize, unsigned numberOfInputChannels, unsigned numberOfChannels, double sampleRate, WebAudioDevice::RenderCallback* renderCallback)
+AudioDevice* PlatformClient::createAudioDevice(size_t bufferSize, unsigned numberOfInputChannels, unsigned numberOfChannels, double sampleRate, AudioDevice::RenderCallback* renderCallback)
 {
     return new AudioDestination(bufferSize, numberOfInputChannels, numberOfChannels, sampleRate, renderCallback);
 }

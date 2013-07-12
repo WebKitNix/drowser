@@ -4,9 +4,9 @@
 #include <gst/gst.h>
 #include <NixPlatform/Platform.h>
 
-class AudioDestination : public WebKit::WebAudioDevice {
+class AudioDestination : public Nix::AudioDevice {
 public:
-    AudioDestination(size_t bufferSize, unsigned numberOfInputChannels, unsigned numberOfChannels, double sampleRate, WebKit::WebAudioDevice::RenderCallback* renderCallback);
+    AudioDestination(size_t bufferSize, unsigned numberOfInputChannels, unsigned numberOfChannels, double sampleRate, Nix::AudioDevice::RenderCallback* renderCallback);
     virtual ~AudioDestination();
 
     virtual void start();

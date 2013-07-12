@@ -19,7 +19,7 @@
 
 #include "AudioFileReader.h"
 
-#include <NixPlatform/WebAudioBus.h>
+#include <NixPlatform/AudioBus.h>
 
 #include <gio/gio.h>
 #include <gst/gst.h>
@@ -37,9 +37,9 @@
 #include <cstdio>
 #include <cassert>
 
-using namespace WebKit;
+using namespace Nix;
 
-WebData AudioFileReader::loadResource(const char* name)
+Data AudioFileReader::loadResource(const char* name)
 {
     FILE* pFile;
     long lSize;
@@ -57,7 +57,7 @@ WebData AudioFileReader::loadResource(const char* name)
 
     // terminate
     fclose(pFile);
-    return WebData(buffer, result);
+    return Data(buffer, result);
 }
 
 static GstCaps* getGStreamerAudioCaps(int channels, float sampleRate)
@@ -424,7 +424,7 @@ void AudioFileReader::decodeAudioForBusCreation()
     gst_element_set_state(m_pipeline, GST_STATE_PAUSED);
 }
 
-bool AudioFileReader::createBus(WebAudioBus* destinationBus, float sampleRate)
+bool AudioFileReader::createBus(AudioBus* destinationBus, float sampleRate)
 {
     m_sampleRate = sampleRate;
 

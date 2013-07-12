@@ -34,14 +34,14 @@ G_END_DECLS
 
 #include <cstring>
 
-using namespace WebKit;
+using namespace Nix;
 
-WebKit::WebFFTFrame* PlatformClient::createFFTFrame(unsigned fftSize)
+Nix::FFTFrame* PlatformClient::createFFTFrame(unsigned fftSize)
 {
     return new FFTGStreamer(fftSize);
 }
 
-WebKit::WebFFTFrame* PlatformClient::createFFTFrame(const WebKit::WebFFTFrame* frame)
+Nix::FFTFrame* PlatformClient::createFFTFrame(const Nix::FFTFrame* frame)
 {
     return new FFTGStreamer(*frame);
 }
@@ -64,7 +64,7 @@ FFTGStreamer::FFTGStreamer(unsigned fftSize)
     m_inverse = gst_fft_f32_new(fftLength, TRUE);
 }
 
-FFTGStreamer::FFTGStreamer(const WebFFTFrame& frame)
+FFTGStreamer::FFTGStreamer(const FFTFrame& frame)
     : m_fftSize(0)
 {
     const FFTGStreamer* other_frame = static_cast<const FFTGStreamer*>(&frame);
@@ -111,7 +111,7 @@ void FFTGStreamer::doInverseFFT(float* data)
     gst_fft_f32_inverse_fft(m_inverse, m_complexData, data);
 }
 
-void FFTGStreamer::multiply(const WebFFTFrame& frame)
+void FFTGStreamer::multiply(const FFTFrame& frame)
 {
     // Multiply both frames element-wise. In the ideal case we'd implement this using
     // optimized SSE2 or ARM instructions.

@@ -44,7 +44,7 @@ public:
     static GamepadController* create();
     ~GamepadController();
 
-    void sampleGamepads(WebKit::WebGamepads&);
+    void sampleGamepads(Nix::Gamepads&);
 
 private:
     GamepadController();
@@ -56,7 +56,7 @@ private:
     static gboolean onGamepadChange(GIOChannel*, GIOCondition, gpointer);
 
     // gamepad abstraction
-    WebKit::WebGamepads m_gamepads;
+    Nix::Gamepads m_gamepads;
 
     // actual gamepad device (/dev/*)
     std::vector<GamepadDevice*> m_gamepadDevices;

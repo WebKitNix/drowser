@@ -8,9 +8,9 @@ void PlatformClient::initializeGamepadController()
     m_gamepadController = GamepadController::create();
 }
 
-void PlatformClient::sampleGamepads(WebKit::WebGamepads& into)
+void PlatformClient::sampleGamepads(Nix::Gamepads& into)
 {
-    if (!WebKit::Platform::current())
+    if (!Nix::Platform::current())
         return;
 
     if (!m_gamepadController)

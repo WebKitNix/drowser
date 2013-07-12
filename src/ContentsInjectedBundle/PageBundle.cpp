@@ -43,7 +43,7 @@ PageBundle::PageBundle(WKBundleRef bundle)
     : m_bundle(bundle)
 {
     m_platformClient = new PlatformClient();
-    WebKit::Platform::initialize(m_platformClient);
+    Nix::Platform::initialize(m_platformClient);
 }
 
 PageBundle::~PageBundle()

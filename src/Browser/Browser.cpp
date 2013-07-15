@@ -124,9 +124,6 @@ void Browser::initUi()
     m_uiPageGroup = WKPageGroupCreateWithIdentifier(wkStr);
     WKRelease(wkStr);
 
-    WKPreferencesRef preferences = WKPageGroupGetPreferences(m_uiPageGroup);
-    WKPreferencesSetAcceleratedCompositingEnabled(preferences, true);
-
     m_uiView = WKViewCreate(m_uiContext, m_uiPageGroup);
 
     WKViewClient client;
@@ -166,7 +163,6 @@ void Browser::initUi()
     m_contentPageGroup = WKPageGroupCreateWithIdentifier(wkStr);
     WKRelease(wkStr);
     WKPreferencesRef webPreferences = WKPageGroupGetPreferences(m_contentPageGroup);
-    WKPreferencesSetAcceleratedCompositingEnabled(webPreferences, true);
     WKPreferencesSetWebAudioEnabled(webPreferences, true);
     WKPreferencesSetWebGLEnabled(webPreferences, true);
 }

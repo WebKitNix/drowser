@@ -10,7 +10,7 @@ public:
     PlatformClient();
 
     // Audio --------------------------------------------------------------
-    virtual double audioHardwareSampleRate() { return 44100; }
+    virtual float audioHardwareSampleRate() { return 44100; }
     virtual size_t audioHardwareBufferSize() { return 128; }
     virtual unsigned audioHardwareOutputChannels() { return 2; }
 

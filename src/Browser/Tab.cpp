@@ -37,8 +37,6 @@
 #include <WebKit2/WKURL.h>
 #include <WebKit2/WKURLRequest.h>
 #include <WebKit2/WKType.h>
-#include <WebKit2/WKPreferences.h>
-#include <WebKit2/WKPreferencesPrivate.h>
 #include <WebKit2/WKHitTestResult.h>
 #include "Browser.h"
 #include "InjectedBundleGlue.h"

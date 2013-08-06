@@ -28,8 +28,9 @@
 
 #include <string>
 #include <functional>
-#include <WebKit2/WKContext.h>
 #include <NIXView.h>
+#include <WebKit2/WKContext.h>
+#include <WebKit2/WKPageVisibilityTypes.h>
 
 class Browser;
 
@@ -49,6 +50,7 @@ public:
     void sendMouseEvent(T);
 
     void setViewportTranslation(int left, int top);
+    void setVisibility(WKPageVisibilityState);
 
     void loadUrl(const std::string& url);
     void back();

@@ -61,6 +61,7 @@ Tab::Tab(Tab* parent)
 {
     WKRetain(m_context);
     init();
+    WKPageSetVisibilityState(m_page, kWKPageVisibilityStateHidden, true);
 }
 
 void Tab::init()
@@ -224,6 +225,11 @@ void Tab::sendMouseEvent<NIXMouseEvent*>(NIXMouseEvent* event)
 void Tab::setViewportTranslation(int left, int top)
 {
     WKViewSetUserViewportTranslation(m_view, left, top);
+}
+
+void Tab::setVisibility(WKPageVisibilityState state)
+{
+    WKPageSetVisibilityState(m_page, state, false);
 }
 
 static bool hasValidPrefix(const std::string& url)

@@ -368,8 +368,15 @@ void Browser::setCurrentTab(const int& tabId)
 {
     if (!m_tabs.count(tabId))
         return;
+
+    if (m_currentTab != -1)
+        currentTab()->setVisibility(kWKPageVisibilityStateHidden);
+
     m_currentTab = tabId;
-    WKViewSetSize(currentTab()->webView(), contentsSize());
+
+    Tab* tab = currentTab();
+    WKViewSetSize(tab->webView(), contentsSize());
+    tab->setVisibility(kWKPageVisibilityStateVisible);
 }
 
 void Browser::loadUrlOnCurrentTab(const std::string& url)

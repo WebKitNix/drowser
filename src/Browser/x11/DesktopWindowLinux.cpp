@@ -35,6 +35,7 @@
 #include "XlibEventUtils.h"
 
 #include <stdio.h>
+#include <string.h> // for memset
 
 static Atom wmDeleteMessageAtom;
 static const double DOUBLE_CLICK_INTERVAL = 300;
@@ -214,6 +215,7 @@ static KeySym chooseSymbolForXKeyEvent(const XKeyEvent* event, bool* useUpperCas
 static NIXKeyEvent convertXKeyEventToNixKeyEvent(const XKeyEvent* event, const KeySym& symbol, bool useUpperCase)
 {
     NIXKeyEvent ev;
+    memset(&ev, 0, sizeof(NIXKeyEvent));
     ev.type = (event->type == KeyPress) ? kNIXInputEventTypeKeyDown : kNIXInputEventTypeKeyUp;
     ev.modifiers = convertXEventModifiersToNativeModifiers(event->state);
     ev.timestamp = convertXEventTimeToNixTimestamp(event->time);
@@ -247,12 +249,14 @@ void DesktopWindowLinux::handleXEvent(const XEvent& event)
         break;
     case KeyPress: {
         NIXKeyEvent ev;
+        memset(&ev, 0, sizeof(NIXKeyEvent));
         XEventToNix(event, &ev);
         m_client->onKeyPress(&ev);
         break;
     }
     case KeyRelease: {
         NIXKeyEvent ev;
+        memset(&ev, 0, sizeof(NIXKeyEvent));
         XEventToNix(event, &ev);
         m_client->onKeyRelease(&ev);
         break;

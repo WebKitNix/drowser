@@ -229,9 +229,9 @@ void Browser::onMousePress(NIXMouseEvent* event)
     if (!m_uiView)
         return;
 
-    if (sendMouseEventToPage(event)){
+    if (sendMouseEventToPage(event))
         m_uiFocused = false;
-    } else {
+    else {
         NIXMouseEvent releaseEvent;
         std::memcpy(&releaseEvent, event, sizeof(NIXMouseEvent));
         releaseEvent.type = kNIXInputEventTypeMouseUp;
@@ -326,9 +326,11 @@ void Browser::didUiReady()
 {
     if (m_initialUrls.empty())
         requestTab();
-
-    for (const std::string& url : m_initialUrls)
-        requestTab()->loadUrl(url);
+    else {
+        m_uiFocused = false;
+        for (const std::string& url : m_initialUrls)
+            requestTab()->loadUrl(url);
+    }
 }
 
 Tab* Browser::requestTab(Tab* parent)

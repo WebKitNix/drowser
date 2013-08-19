@@ -62,6 +62,7 @@ private:
     void destroyGLContext();
     void updateSizeIfNeeded(int width, int height);
 
+    void sendKeyboardEventToNix(const XEvent& event);
     void handleXEvent(const XEvent&);
     void updateClickCount(const XButtonPressedEvent* event);
 
@@ -70,6 +71,8 @@ private:
     XlibEventSource* m_eventSource;
     Display* m_display;
     Window m_window;
+    XIM m_im;
+    XIC m_ic;
     Cursor m_cursor;
     unsigned int m_currentX11Cursor;
 
@@ -113,6 +116,12 @@ DesktopWindowLinux::~DesktopWindowLinux()
     if (m_cursor)
         XFreeCursor(m_display, m_cursor);
     XCloseDisplay(m_display);
+
+    if (m_ic)
+        XDestroyIC(m_ic);
+
+    if (m_im)
+        XCloseIM(m_im);
 }
 
 void DesktopWindowLinux::makeCurrent()
@@ -127,6 +136,17 @@ void DesktopWindowLinux::swapBuffers()
 
 void DesktopWindowLinux::setup()
 {
+    char* loc = setlocale(LC_ALL, "");
+    if (!loc)
+        fprintf(stderr, "Could not use the the default environment locale\n");
+
+    if (!XSupportsLocale())
+        fprintf(stderr, "Default locale \"%s\" is no supported\n", loc ? loc : "");
+
+    // When changing the locale being used we must call XSetLocaleModifiers (refer to manpage).
+    if (!XSetLocaleModifiers(""))
+        fprintf(stderr, "Could not set locale modifiers for locale \"%s\"\n", loc ? loc : "");
+
     m_display = XOpenDisplay(0);
     if (!m_display)
         throw FatalError("Couldn't connect to X server");
@@ -164,6 +184,14 @@ void DesktopWindowLinux::setup()
                                 0, 0, m_size.width, m_size.height, 0,
                                 m_visualInfo->depth, InputOutput, m_visualInfo->visual,
                                 CWColormap | CWEventMask, &setAttributes);
+
+    m_im = XOpenIM(m_display, 0, 0, 0);
+    if (!m_im)
+        fprintf(stderr, "Could not open input method\n");
+
+    m_ic = XCreateIC(m_im, XNInputStyle, XIMPreeditNothing | XIMStatusNothing, XNClientWindow, m_window, NULL);
+    if (!m_ic)
+        fprintf(stderr, "Could not open input context\n");
 
     wmDeleteMessageAtom = XInternAtom(m_display, "WM_DELETE_WINDOW", False);
     XSetWMProtocols(m_display, m_window, &wmDeleteMessageAtom, 1);
@@ -225,12 +253,30 @@ static NIXKeyEvent convertXKeyEventToNixKeyEvent(const XKeyEvent* event, const K
     return ev;
 }
 
-static void XEventToNix(const XEvent& event, NIXKeyEvent* nixEvent)
+void DesktopWindowLinux::sendKeyboardEventToNix(const XEvent& event)
 {
+    if (XFilterEvent(const_cast<XEvent*>(&event), m_window))
+        return;
+
+    NIXKeyEvent ev;
+    memset(&ev, 0, sizeof(NIXKeyEvent));
+    char buf[20];
     bool shouldUseUpperCase;
     const XKeyEvent* keyEvent = reinterpret_cast<const XKeyEvent*>(&event);
     KeySym symbol = chooseSymbolForXKeyEvent(keyEvent, &shouldUseUpperCase);
-    *nixEvent = convertXKeyEventToNixKeyEvent(keyEvent, symbol, shouldUseUpperCase);
+    ev = convertXKeyEventToNixKeyEvent(keyEvent, symbol, shouldUseUpperCase);
+
+    Status status;
+    int count = Xutf8LookupString(m_ic, const_cast<XKeyEvent*>(keyEvent), buf, 20, &symbol, &status);
+    if (count) {
+        buf[count] = '\0';
+        ev.text = buf;
+    }
+
+    if (ev.type == kNIXInputEventTypeKeyDown)
+        m_client->onKeyPress(&ev);
+    else
+        m_client->onKeyRelease(&ev);
 }
 
 void DesktopWindowLinux::handleXEvent(const XEvent& event)
@@ -247,20 +293,10 @@ void DesktopWindowLinux::handleXEvent(const XEvent& event)
     case Expose:
         m_client->onWindowExpose();
         break;
-    case KeyPress: {
-        NIXKeyEvent ev;
-        memset(&ev, 0, sizeof(NIXKeyEvent));
-        XEventToNix(event, &ev);
-        m_client->onKeyPress(&ev);
+    case KeyPress:
+    case KeyRelease:
+        sendKeyboardEventToNix(event);
         break;
-    }
-    case KeyRelease: {
-        NIXKeyEvent ev;
-        memset(&ev, 0, sizeof(NIXKeyEvent));
-        XEventToNix(event, &ev);
-        m_client->onKeyRelease(&ev);
-        break;
-    }
     case ButtonPress: {
         const XButtonPressedEvent* xEvent = reinterpret_cast<const XButtonReleasedEvent*>(&event);
 

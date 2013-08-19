@@ -24,18 +24,18 @@
  */
 
 #include "DesktopWindow.h"
+
+#include <cstring>
+#include <GL/glx.h>
+#include <iostream>
 #include <X11/X.h>
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
 #include <X11/cursorfont.h>
-#include <GL/glx.h>
 
 #include "FatalError.h"
 #include "XlibEventSource.h"
 #include "XlibEventUtils.h"
-
-#include <stdio.h>
-#include <string.h> // for memset
 
 static Atom wmDeleteMessageAtom;
 static const double DOUBLE_CLICK_INTERVAL = 300;
@@ -58,6 +58,7 @@ public:
     void swapBuffers();
     void setMouseCursor(MouseCursor cursor);
 private:
+    void freeResources();
     void setup();
     void destroyGLContext();
     void updateSizeIfNeeded(int width, int height);
@@ -92,6 +93,9 @@ DesktopWindowLinux::DesktopWindowLinux(DesktopWindowClient* client, int width, i
     : DesktopWindow(client, width, height)
     , m_eventSource(0)
     , m_display(0)
+    , m_window(0)
+    , m_im(0)
+    , m_ic(0)
     , m_cursor(0)
     , m_currentX11Cursor(XC_left_ptr)
     , m_lastClickTime(0)
@@ -100,7 +104,12 @@ DesktopWindowLinux::DesktopWindowLinux(DesktopWindowClient* client, int width, i
     , m_lastClickButton(kWKEventMouseButtonNoButton)
     , m_clickCount(0)
 {
-    setup();
+    try {
+        setup();
+    } catch(const FatalError&) {
+        freeResources();
+        throw;
+    }
 
     m_eventSource = new XlibEventSource(m_display, this);
 
@@ -110,16 +119,22 @@ DesktopWindowLinux::DesktopWindowLinux(DesktopWindowClient* client, int width, i
 
 DesktopWindowLinux::~DesktopWindowLinux()
 {
+    freeResources();
+}
+
+void DesktopWindowLinux::freeResources()
+{
     delete m_eventSource;
-    destroyGLContext();
-    XDestroyWindow(m_display, m_window);
+    if (m_context)
+        destroyGLContext();
+    if (m_window)
+        XDestroyWindow(m_display, m_window);
     if (m_cursor)
         XFreeCursor(m_display, m_cursor);
-    XCloseDisplay(m_display);
-
+    if (m_display)
+        XCloseDisplay(m_display);
     if (m_ic)
         XDestroyIC(m_ic);
-
     if (m_im)
         XCloseIM(m_im);
 }
@@ -138,14 +153,14 @@ void DesktopWindowLinux::setup()
 {
     char* loc = setlocale(LC_ALL, "");
     if (!loc)
-        fprintf(stderr, "Could not use the the default environment locale\n");
+        std::cerr << "Could not use the the default environment locale.\n";
 
     if (!XSupportsLocale())
-        fprintf(stderr, "Default locale \"%s\" is no supported\n", loc ? loc : "");
+        std::cerr << "Default locale \"" << (loc ? loc : "") << "\" is no supported.\n";
 
     // When changing the locale being used we must call XSetLocaleModifiers (refer to manpage).
     if (!XSetLocaleModifiers(""))
-        fprintf(stderr, "Could not set locale modifiers for locale \"%s\"\n", loc ? loc : "");
+        std::cerr << "Could not set locale modifiers for locale \"" << (loc ? loc : "") << "\".\n";
 
     m_display = XOpenDisplay(0);
     if (!m_display)
@@ -187,11 +202,11 @@ void DesktopWindowLinux::setup()
 
     m_im = XOpenIM(m_display, 0, 0, 0);
     if (!m_im)
-        fprintf(stderr, "Could not open input method\n");
+        throw FatalError("Could not open input method.");
 
     m_ic = XCreateIC(m_im, XNInputStyle, XIMPreeditNothing | XIMStatusNothing, XNClientWindow, m_window, NULL);
     if (!m_ic)
-        fprintf(stderr, "Could not open input context\n");
+        throw FatalError("Could not open input context.");
 
     wmDeleteMessageAtom = XInternAtom(m_display, "WM_DELETE_WINDOW", False);
     XSetWMProtocols(m_display, m_window, &wmDeleteMessageAtom, 1);

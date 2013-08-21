@@ -131,12 +131,12 @@ void DesktopWindowLinux::freeResources()
         XDestroyWindow(m_display, m_window);
     if (m_cursor)
         XFreeCursor(m_display, m_cursor);
-    if (m_display)
-        XCloseDisplay(m_display);
     if (m_ic)
         XDestroyIC(m_ic);
     if (m_im)
         XCloseIM(m_im);
+    if (m_display)
+        XCloseDisplay(m_display);
 }
 
 void DesktopWindowLinux::makeCurrent()

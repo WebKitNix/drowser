@@ -12,7 +12,7 @@ audio:usePackage(gstreamerFft)
 audio:usePackage(nix)
 audio:addIncludePath("..")
 audio:addFiles([[
-    AudioDestination.cpp
+    GstAudioDevice.cpp
     AudioFileReader.cpp
     FFTGStreamer.cpp
     PlatformClientAudio.cpp

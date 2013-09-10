@@ -16,7 +16,7 @@
  *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include "AudioDestination.h"
+#include "GstAudioDevice.h"
 #include "WebKitWebAudioSourceGStreamer.h"
 
 #include <gst/gst.h>
@@ -25,13 +25,13 @@
 using namespace Nix;
 
 #ifndef GST_API_VERSION_1
-static void onGStreamerWavparsePadAddedCallback(GstElement* element, GstPad* pad, AudioDestination* destination)
+static void onGStreamerWavparsePadAddedCallback(GstElement* element, GstPad* pad, GstAudioDevice* destination)
 {
     destination->finishBuildingPipelineAfterWavParserPadReady(pad);
 }
 #endif
 
-AudioDestination::AudioDestination(size_t bufferSize, unsigned numberOfInputChannels, unsigned numberOfChannels, double sampleRate, AudioDevice::RenderCallback* callback)
+GstAudioDevice::GstAudioDevice(size_t bufferSize, unsigned numberOfInputChannels, unsigned numberOfChannels, double sampleRate, AudioDevice::RenderCallback* callback)
     : m_wavParserAvailable(false)
     , m_audioSinkAvailable(false)
     , m_pipeline(0)
@@ -65,13 +65,13 @@ AudioDestination::AudioDestination(size_t bufferSize, unsigned numberOfInputChan
 #endif
 }
 
-AudioDestination::~AudioDestination()
+GstAudioDevice::~GstAudioDevice()
 {
     gst_element_set_state(m_pipeline, GST_STATE_NULL);
     gst_object_unref(m_pipeline);
 }
 
-void AudioDestination::finishBuildingPipelineAfterWavParserPadReady(GstPad* pad)
+void GstAudioDevice::finishBuildingPipelineAfterWavParserPadReady(GstPad* pad)
 {
     //FIXME: POSSIBLE LEAK!!!
     GstElement* audioSink = gst_element_factory_make("autoaudiosink", 0);
@@ -103,7 +103,7 @@ void AudioDestination::finishBuildingPipelineAfterWavParserPadReady(GstPad* pad)
     gst_element_sync_state_with_parent(audioSink); //FIXME: I believe we should delete audioSink after this.
 }
 
-void AudioDestination::start()
+void GstAudioDevice::start()
 {
     if (!m_wavParserAvailable)
         return;
@@ -111,7 +111,7 @@ void AudioDestination::start()
     gst_element_set_state(m_pipeline, GST_STATE_PLAYING);
 }
 
-void AudioDestination::stop()
+void GstAudioDevice::stop()
 {
     if (!m_wavParserAvailable || !m_audioSinkAvailable)
         return;

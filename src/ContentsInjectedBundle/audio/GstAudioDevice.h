@@ -1,13 +1,13 @@
-#ifndef AudioDestination_h
-#define AudioDestination_h
+#ifndef GstAudioDevice_h
+#define GstAudioDevice_h
 
 #include <gst/gst.h>
 #include <NixPlatform/Platform.h>
 
-class AudioDestination : public Nix::AudioDevice {
+class GstAudioDevice : public Nix::AudioDevice {
 public:
-    AudioDestination(size_t bufferSize, unsigned numberOfInputChannels, unsigned numberOfChannels, double sampleRate, Nix::AudioDevice::RenderCallback* renderCallback);
-    virtual ~AudioDestination();
+    GstAudioDevice(size_t bufferSize, unsigned numberOfInputChannels, unsigned numberOfChannels, double sampleRate, Nix::AudioDevice::RenderCallback* renderCallback);
+    virtual ~GstAudioDevice();
 
     virtual void start();
     virtual void stop();

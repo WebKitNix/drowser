@@ -1,6 +1,6 @@
 #include "PlatformClient.h"
 #include "AudioFileReader.h"
-#include "AudioDestination.h"
+#include "GstAudioDevice.h"
 
 #include <NixPlatform/AudioBus.h>
 
@@ -30,5 +30,5 @@ Data PlatformClient::loadResource(const char* name)
 
 AudioDevice* PlatformClient::createAudioDevice(size_t bufferSize, unsigned numberOfInputChannels, unsigned numberOfChannels, double sampleRate, AudioDevice::RenderCallback* renderCallback)
 {
-    return new AudioDestination(bufferSize, numberOfInputChannels, numberOfChannels, sampleRate, renderCallback);
+    return new GstAudioDevice(bufferSize, numberOfInputChannels, numberOfChannels, sampleRate, renderCallback);
 }

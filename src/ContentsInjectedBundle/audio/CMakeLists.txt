@@ -37,7 +37,7 @@ link_directories(
 )
 
 set(audio_SOURCES
-  AudioDestination.cpp
+  GstAudioDevice.cpp
   AudioFileReader.cpp
   FFTGStreamer.cpp
   PlatformClientAudio.cpp

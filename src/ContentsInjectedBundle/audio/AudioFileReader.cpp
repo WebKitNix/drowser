@@ -41,23 +41,14 @@ using namespace Nix;
 
 Data AudioFileReader::loadResource(const char* name)
 {
-    FILE* pFile;
-    long lSize;
-    char* buffer;
-    size_t result;
-
-    pFile = fopen(name, "rb");
-
+    FILE* pFile = fopen(name, "rb");
     fseek(pFile , 0 , SEEK_END);
-    lSize = ftell(pFile);
+    Data data(ftell(pFile));
     rewind(pFile);
-
-    buffer = (char*) malloc(sizeof(char) * lSize);
-    result = fread(buffer, sizeof(char), lSize, pFile);
-
-    // terminate
+    fread(data.data(), data.size(), 1, pFile);
     fclose(pFile);
-    return Data(buffer, result);
+
+    return data;
 }
 
 static GstCaps* getGStreamerAudioCaps(int channels, float sampleRate)

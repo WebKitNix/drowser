@@ -377,8 +377,8 @@ static void webKitWebAudioSrcLoop(WebKitWebAudioSrc* src)
     // FIXME: store audioData into priv???
     //const WebVector<float*>& sourceData, const WebVector<float*>& destinationData, size_t numberOfFrames) { };
     // FIXME: Add support for local/live audio input by passing sourceAudioData.
-    Nix::Vector<float*> sourceDataVector;
-    Nix::Vector<float*> audioDataVector((size_t) 2);
+    std::vector<float*> sourceDataVector;
+    std::vector<float*> audioDataVector(2);
     audioDataVector[0] = audioData[0];
     audioDataVector[1] = audioData[1];
     priv->handler->render(sourceDataVector, audioDataVector, priv->framesToPull);

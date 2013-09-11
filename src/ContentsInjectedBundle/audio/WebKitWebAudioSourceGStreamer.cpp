@@ -126,11 +126,7 @@ static GstAudioChannelPosition webKitWebAudioGStreamerChannelPosition(int channe
         position = GST_AUDIO_CHANNEL_POSITION_FRONT_CENTER;
         break;
     case ChannelLFE:
-#ifdef GST_API_VERSION_1
         position = GST_AUDIO_CHANNEL_POSITION_LFE1;
-#else
-        position = GST_AUDIO_CHANNEL_POSITION_LFE;
-#endif
         break;
     case ChannelSurroundLeft:
         position = GST_AUDIO_CHANNEL_POSITION_REAR_LEFT;

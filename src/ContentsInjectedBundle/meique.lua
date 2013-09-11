@@ -1,12 +1,12 @@
 addSubdirectory("audio")
 addSubdirectory("gamepad")
-addSubdirectory("usermedia")
+addSubdirectory("mediastream")
 
 pageBundle = Library:new("PageBundle")
 pageBundle:usePackage(nix)
 pageBundle:useTarget(audio)
 pageBundle:useTarget(gamepad)
-pageBundle:useTarget(usermedia)
+pageBundle:useTarget(mediastream)
 
 pageBundle:addFiles([[
     PageBundle.cpp

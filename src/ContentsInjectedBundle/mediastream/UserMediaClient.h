@@ -23,33 +23,18 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "UserMediaClient.h"
-#include <NixPlatform/UserMediaRequest.h>
+#ifndef UserMediaClient_h
+#define UserMediaClient_h
 
-#include <cstdio>
+#include <NixPlatform/UserMediaClient.h>
 
-UserMediaClient::UserMediaClient()
-{
-    printf("[%s] %p\n", __PRETTY_FUNCTION__, this);
-}
+class UserMediaClient : public Nix::UserMediaClient {
+public:
+    UserMediaClient();
+	virtual ~UserMediaClient();
+    virtual void pageDestroyed();
+    virtual void requestUserMedia(Nix::UserMediaRequest&, const Nix::Vector<Nix::MediaStreamSource>&, const Nix::Vector<Nix::MediaStreamSource>&);
+    virtual void cancelUserMediaRequest(const Nix::UserMediaRequest&);
+};
 
-UserMediaClient::~UserMediaClient()
-{
-    printf("[%s] %p\n", __PRETTY_FUNCTION__, this);
-}
-
-void UserMediaClient::pageDestroyed()
-{
-    printf("[%s] %p\n", __PRETTY_FUNCTION__, this);
-    delete this;
-}
-
-void UserMediaClient::requestUserMedia(const Nix::UserMediaRequest& request, const Nix::Vector<Nix::MediaStreamSource>& audioSources, const Nix::Vector<Nix::MediaStreamSource>& videoSources)
-{
-    printf("[%s] %p -- audio: %d, video: %d\n", __PRETTY_FUNCTION__, this, request.audio(), request.video());
-}
-
-void UserMediaClient::cancelUserMediaRequest(const Nix::UserMediaRequest& request)
-{
-    printf("[%s] %p -- audio: %d, video: %d\n", __PRETTY_FUNCTION__, this, request.audio(), request.video());
-}
+#endif // UserMediaClient_h

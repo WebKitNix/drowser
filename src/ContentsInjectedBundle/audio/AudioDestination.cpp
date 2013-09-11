@@ -19,8 +19,12 @@
 #include "AudioDestination.h"
 #include "WebKitWebAudioSourceGStreamer.h"
 
+#include <NixPlatform/CString.h>
+#include <NixPlatform/String.h>
+#include <NixPlatform/Vector.h>
 #include <gst/gst.h>
 #include <gst/pbutils/pbutils.h>
+#include <cstring>
 
 using namespace Nix;
 
@@ -31,18 +35,28 @@ static void onGStreamerWavparsePadAddedCallback(GstElement* element, GstPad* pad
 }
 #endif
 
-AudioDestination::AudioDestination(size_t bufferSize, unsigned numberOfInputChannels, unsigned numberOfChannels, double sampleRate, AudioDevice::RenderCallback* callback)
+AudioDestination::AudioDestination(const Nix::String& inputDeviceId, size_t bufferSize, unsigned, unsigned, double sampleRate, AudioDevice::RenderCallback* renderCallback)
     : m_wavParserAvailable(false)
     , m_audioSinkAvailable(false)
     , m_pipeline(0)
     , m_sampleRate(sampleRate)
+    , m_bufferSize(bufferSize)
+    , m_isDevice(false)
+    , m_loopId(0)
+    , m_inputDeviceId(inputDeviceId)
+    , m_renderCallback(renderCallback)
 {
+    printf("[%s] %p {%s}\n", __PRETTY_FUNCTION__, this, m_inputDeviceId.utf8().data());
+
+    if (!std::strcmp(m_inputDeviceId.utf8().data(), "autoaudiosrc;default"))
+        m_isDevice = true;
+
     // FIXME: NUMBER OF CHANNELS NOT USED??????????/ WHY??????????
     m_pipeline = gst_pipeline_new("play");
 
     GstElement* webkitAudioSrc = reinterpret_cast<GstElement*>(g_object_new(WEBKIT_TYPE_WEB_AUDIO_SRC,
                                                                             "rate", sampleRate,
-                                                                            "handler", callback,
+                                                                            "handler", renderCallback,
                                                                             "frames", bufferSize, NULL));
 
     GstElement* wavParser = gst_element_factory_make("wavparse", 0);
@@ -67,8 +81,10 @@ AudioDestination::AudioDestination(size_t bufferSize, unsigned numberOfInputChan
 
 AudioDestination::~AudioDestination()
 {
+    printf("[%s] %p\n", __PRETTY_FUNCTION__, this);
     gst_element_set_state(m_pipeline, GST_STATE_NULL);
     gst_object_unref(m_pipeline);
+    g_source_remove(m_loopId);
 }
 
 void AudioDestination::finishBuildingPipelineAfterWavParserPadReady(GstPad* pad)
@@ -105,6 +121,12 @@ void AudioDestination::finishBuildingPipelineAfterWavParserPadReady(GstPad* pad)
 
 void AudioDestination::start()
 {
+    printf("[%s] %p {%s}\n", __PRETTY_FUNCTION__, this, m_inputDeviceId.utf8().data());
+    if (m_isDevice) {
+        m_loopId = g_idle_add(s_audioProcessLoop, this);
+        return;
+    }
+
     if (!m_wavParserAvailable)
         return;
 
@@ -117,4 +139,54 @@ void AudioDestination::stop()
         return;
 
     gst_element_set_state(m_pipeline, GST_STATE_PAUSED);
+}
+
+gboolean AudioDestination::audioProcessLoop()
+{
+    printf("[%s] %p\n", __PRETTY_FUNCTION__, this);
+    /*
+    size_t bufferSize = this->m_bufferSize;
+    Nix::Vector<float*> sourceDataVector((size_t) 2);
+    static bool first = true;
+    for (size_t i = 0; i < sourceDataVector.size(); ++i) {
+        sourceDataVector[i] = new float[bufferSize];
+        if (first)
+            for (size_t j = 0; j < bufferSize; ++j)
+                sourceDataVector[i][j] = (float) j;
+        else
+            std::memset(sourceDataVector[i], 0, bufferSize * sizeof(float));
+    }
+    first = false;
+
+    Nix::Vector<float*> audioDataVector((size_t) 2);
+    for (size_t i = 0; i < audioDataVector.size(); ++i) {
+        audioDataVector[i] = new float[bufferSize];
+        std::memset(audioDataVector[i], 0, bufferSize * sizeof(float));
+    }
+
+    this->m_renderCallback->render(sourceDataVector, audioDataVector, bufferSize);
+    for (size_t i = 0; i < audioDataVector.size(); ++i) {
+        for (size_t j = 0; j < bufferSize; ++j) {
+            printf("%f ", audioDataVector[i][j]);
+        }
+    }
+    printf("\n");
+
+    static bool shouldContinue = true;
+    static float count = 1;
+    for (size_t i = 0; i < bufferSize; ++i)
+        if (audioDataVector[0][i] != 0)
+            if (audioDataVector[0][i] == audioDataVector[1][i] && audioDataVector[0][i] == count)
+                count += 1;
+            else
+                shouldContinue = false;
+
+    for (size_t i = 0; i < sourceDataVector.size(); ++i)
+        delete[] sourceDataVector[i];
+    for (size_t i = 0; i < audioDataVector.size(); ++i)
+        delete[] audioDataVector[i];
+    return shouldContinue;
+    //*/
+    static int a = 5;
+    return (a-- != 0);
 }

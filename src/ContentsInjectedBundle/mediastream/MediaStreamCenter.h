@@ -23,18 +23,19 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef UserMediaClient_h
-#define UserMediaClient_h
+#ifndef MediaStreamCenter_h
+#define MediaStreamCenter_h
 
-#include <NixPlatform/UserMediaClient.h>
+#include <NixPlatform/CString.h>
+#include <NixPlatform/MediaStreamCenter.h>
+#include <NixPlatform/MediaStreamSourcesQueryClient.h>
+#include <NixPlatform/String.h>
 
-class UserMediaClient : public Nix::UserMediaClient {
+class MediaStreamCenter : public Nix::MediaStreamCenter {
 public:
-    UserMediaClient();
-	virtual ~UserMediaClient();
-    virtual void pageDestroyed();
-    virtual void requestUserMedia(const Nix::UserMediaRequest&, const Nix::Vector<Nix::MediaStreamSource>&, const Nix::Vector<Nix::MediaStreamSource>&);
-    virtual void cancelUserMediaRequest(const Nix::UserMediaRequest&);
+    MediaStreamCenter();
+	virtual ~MediaStreamCenter();
+	virtual void queryMediaStreamsSources(Nix::MediaStreamSourcesQueryClient& queryClient);
 };
 
-#endif // UserMediaClient_h
+#endif // MediaStreamCenter_h

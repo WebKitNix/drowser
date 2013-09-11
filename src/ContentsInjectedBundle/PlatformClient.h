@@ -16,9 +16,10 @@ public:
 
     // Creates a device for audio I/O.
     // Pass in (numberOfInputChannels > 0) if live/local audio input is desired.
-    virtual Nix::AudioDevice* createAudioDevice(size_t bufferSize, unsigned numberOfInputChannels, unsigned numberOfChannels, double sampleRate, Nix::AudioDevice::RenderCallback* renderCallback);
+    virtual Nix::AudioDevice* createAudioDevice(const Nix::String& inputDeviceId, size_t bufferSize, unsigned numberOfInputChannels, unsigned numberOfChannels, double sampleRate, Nix::AudioDevice::RenderCallback* renderCallback);
 
     virtual Nix::UserMediaClient* createUserMediaClient();
+    virtual Nix::MediaStreamCenter* createMediaStreamCenter();
 
     // Resources -----------------------------------------------------------
     // Returns a blob of data corresponding to the named resource.

@@ -19,6 +19,7 @@
 #include "WebKitWebAudioSourceGStreamer.h"
 
 #include <gst/pbutils/pbutils.h>
+#include <cstdlib>
 
 #ifdef GST_API_VERSION_1
 #include <gst/audio/audio.h>

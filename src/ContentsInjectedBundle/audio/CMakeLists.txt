@@ -1,22 +1,8 @@
-set(GSTREAMER_MINIMUM_VERSION 1.0.5)
-
-pkg_check_modules(GST1_TEST gstreamer-1.0)
-if ( GST1_TEST_FOUND AND NOT ${GST1_TEST_VERSION} VERSION_LESS ${GSTREAMER_MINIMUM_VERSION} )
-    pkg_check_modules(GSTREAMER REQUIRED gstreamer-1.0)
-    pkg_check_modules(GSTREAMER-APP REQUIRED gstreamer-app-1.0)
-    pkg_check_modules(GSTREAMER-AUDIO REQUIRED gstreamer-audio-1.0)
-    pkg_check_modules(GSTREAMER-PBUTILS REQUIRED gstreamer-pbutils-1.0)
-    pkg_check_modules(GSTREAMER-FFT REQUIRED gstreamer-fft-1.0)
-    add_definitions(-DGST_API_VERSION_1=1)
-else()
-    # fallback to gstreamer-0.10
-    unset(GSTREAMER_MINIMUM_VERSION)
-    pkg_check_modules(GSTREAMER REQUIRED gstreamer-0.10)
-    pkg_check_modules(GSTREAMER-APP REQUIRED gstreamer-app-0.10)
-    pkg_check_modules(GSTREAMER-AUDIO REQUIRED gstreamer-audio-0.10)
-    pkg_check_modules(GSTREAMER-FFT REQUIRED gstreamer-fft-0.10)
-    set_source_files_properties(WebKitWebAudioSourceGStreamer.cpp PROPERTIES COMPILE_DEFINITIONS "GLIB_DISABLE_DEPRECATION_WARNINGS=1")
-endif()
+pkg_check_modules(GSTREAMER gstreamer-1.0 REQUIRED)
+pkg_check_modules(GSTREAMER-APP REQUIRED gstreamer-app-1.0)
+pkg_check_modules(GSTREAMER-AUDIO REQUIRED gstreamer-audio-1.0)
+pkg_check_modules(GSTREAMER-PBUTILS REQUIRED gstreamer-pbutils-1.0)
+pkg_check_modules(GSTREAMER-FFT REQUIRED gstreamer-fft-1.0)
 
 include_directories(
   ${WebKitNix_INCLUDE_DIRS}

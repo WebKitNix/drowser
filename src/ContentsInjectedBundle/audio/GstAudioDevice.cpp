@@ -24,13 +24,6 @@
 
 using namespace Nix;
 
-#ifndef GST_API_VERSION_1
-static void onGStreamerWavparsePadAddedCallback(GstElement* element, GstPad* pad, GstAudioDevice* destination)
-{
-    destination->finishBuildingPipelineAfterWavParserPadReady(pad);
-}
-#endif
-
 GstAudioDevice::GstAudioDevice(size_t bufferSize, unsigned numberOfInputChannels, unsigned numberOfChannels, double sampleRate, AudioDevice::RenderCallback* callback)
     : m_wavParserAvailable(false)
     , m_audioSinkAvailable(false)
@@ -53,16 +46,11 @@ GstAudioDevice::GstAudioDevice(size_t bufferSize, unsigned numberOfInputChannels
     if (!m_wavParserAvailable)
         return;
 
-#ifndef GST_API_VERSION_1
-    g_signal_connect(wavParser, "pad-added", G_CALLBACK(onGStreamerWavparsePadAddedCallback), this);
-#endif
     gst_bin_add_many(GST_BIN(m_pipeline), webkitAudioSrc, wavParser, NULL);
     gst_element_link_pads_full(webkitAudioSrc, "src", wavParser, "sink", GST_PAD_LINK_CHECK_NOTHING);
 
-#ifdef GST_API_VERSION_1
     GstPad* srcPad = gst_element_get_static_pad(wavParser, "src");
     finishBuildingPipelineAfterWavParserPadReady(srcPad);
-#endif
 }
 
 GstAudioDevice::~GstAudioDevice()

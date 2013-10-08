@@ -1,13 +1,13 @@
-#ifndef PlatformClient_h
-#define PlatformClient_h
+#ifndef BrowserPlatform_h
+#define BrowserPlatform_h
 
 #include <NixPlatform/Platform.h>
 
 class GamepadController;
 
-class PlatformClient : public Nix::Platform {
+class BrowserPlatform : public Nix::Platform {
 public:
-    PlatformClient();
+    BrowserPlatform();
 
     // Audio --------------------------------------------------------------
     virtual float audioHardwareSampleRate() { return 44100; }

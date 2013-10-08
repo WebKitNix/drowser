@@ -15,6 +15,6 @@ audio:addFiles([[
     GstAudioDevice.cpp
     AudioFileReader.cpp
     FFTGStreamer.cpp
-    PlatformClientAudio.cpp
+    BrowserPlatformAudio.cpp
     WebKitWebAudioSourceGStreamer.cpp
 ]])

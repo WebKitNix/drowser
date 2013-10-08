@@ -1,10 +1,10 @@
-#include "PlatformClient.h"
+#include "BrowserPlatform.h"
 
 #include <cstdio>
 
 extern bool initializeAudioBackend();
 
-PlatformClient::PlatformClient()
+BrowserPlatform::BrowserPlatform()
 {
     initializeAudioBackend();
     initializeGamepadController();

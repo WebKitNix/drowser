@@ -24,7 +24,7 @@
  */
 
 #include "FFTGStreamer.h"
-#include "PlatformClient.h"
+#include "BrowserPlatform.h"
 
 #include <glib.h>
 G_BEGIN_DECLS
@@ -36,12 +36,12 @@ G_END_DECLS
 
 using namespace Nix;
 
-Nix::FFTFrame* PlatformClient::createFFTFrame(unsigned fftSize)
+Nix::FFTFrame* BrowserPlatform::createFFTFrame(unsigned fftSize)
 {
     return new FFTGStreamer(fftSize);
 }
 
-Nix::FFTFrame* PlatformClient::createFFTFrame(const Nix::FFTFrame* frame)
+Nix::FFTFrame* BrowserPlatform::createFFTFrame(const Nix::FFTFrame* frame)
 {
     return new FFTGStreamer(*frame);
 }

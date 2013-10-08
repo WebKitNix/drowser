@@ -28,7 +28,7 @@
 
 #include <WebKit2/WKBundle.h>
 
-class PlatformClient;
+class BrowserPlatform;
 
 class PageBundle
 {
@@ -38,7 +38,7 @@ public:
 
 private:
     WKBundleRef m_bundle;
-    PlatformClient* m_platformClient;
+    BrowserPlatform* m_platform;
 };
 
 #endif

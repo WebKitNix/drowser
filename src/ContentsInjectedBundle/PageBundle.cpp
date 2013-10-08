@@ -24,7 +24,7 @@
  */
 
 #include "PageBundle.h"
-#include "PlatformClient.h"
+#include "BrowserPlatform.h"
 
 // I don't care about windows or gcc < 4.x right now.
 #define UIBUNDLE_EXPORT __attribute__ ((visibility("default")))
@@ -42,11 +42,11 @@ UIBUNDLE_EXPORT void WKBundleInitialize(WKBundleRef bundle, WKTypeRef initializa
 PageBundle::PageBundle(WKBundleRef bundle)
     : m_bundle(bundle)
 {
-    m_platformClient = new PlatformClient();
-    Nix::Platform::initialize(m_platformClient);
+    m_platform = new BrowserPlatform();
+    Nix::Platform::initialize(m_platform);
 }
 
 PageBundle::~PageBundle()
 {
-    delete m_platformClient;
+    delete m_platform;
 }

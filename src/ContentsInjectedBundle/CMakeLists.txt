@@ -7,7 +7,7 @@ add_subdirectory(gamepad)
 
 set(PageBundle_SOURCES
   PageBundle.cpp
-  PlatformClient.cpp
+  BrowserPlatform.cpp
 )
 
 set(PageBundle_LIBRARIES

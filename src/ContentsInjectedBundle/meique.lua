@@ -8,5 +8,5 @@ pageBundle:useTarget(gamepad)
 
 pageBundle:addFiles([[
     PageBundle.cpp
-    PlatformClient.cpp
+    BrowserPlatform.cpp
 ]])

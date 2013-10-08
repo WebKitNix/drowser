@@ -1,14 +1,14 @@
-#include "PlatformClient.h"
+#include "BrowserPlatform.h"
 #include "Gamepad.h"
 
 #include <cstdio>
 
-void PlatformClient::initializeGamepadController()
+void BrowserPlatform::initializeGamepadController()
 {
     m_gamepadController = GamepadController::create();
 }
 
-void PlatformClient::sampleGamepads(Nix::Gamepads& into)
+void BrowserPlatform::sampleGamepads(Nix::Gamepads& into)
 {
     if (!Nix::Platform::current())
         return;

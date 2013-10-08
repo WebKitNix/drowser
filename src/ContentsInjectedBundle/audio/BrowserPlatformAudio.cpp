@@ -1,4 +1,4 @@
-#include "PlatformClient.h"
+#include "BrowserPlatform.h"
 #include "AudioFileReader.h"
 #include "GstAudioDevice.h"
 
@@ -18,17 +18,17 @@ bool initializeAudioBackend()
     return didInitialize;
 }
 
-bool PlatformClient::loadAudioResource(AudioBus* destinationBus, const char* audioFileData, size_t dataSize, double sampleRate)
+bool BrowserPlatform::loadAudioResource(AudioBus* destinationBus, const char* audioFileData, size_t dataSize, double sampleRate)
 {
     return AudioFileReader(audioFileData, dataSize).createBus(destinationBus, sampleRate);
 }
 
-Data PlatformClient::loadResource(const char* name)
+Data BrowserPlatform::loadResource(const char* name)
 {
     return AudioFileReader::loadResource(name);
 }
 
-AudioDevice* PlatformClient::createAudioDevice(size_t bufferSize, unsigned numberOfInputChannels, unsigned numberOfChannels, double sampleRate, AudioDevice::RenderCallback* renderCallback)
+AudioDevice* BrowserPlatform::createAudioDevice(size_t bufferSize, unsigned numberOfInputChannels, unsigned numberOfChannels, double sampleRate, AudioDevice::RenderCallback* renderCallback)
 {
     return new GstAudioDevice(bufferSize, numberOfInputChannels, numberOfChannels, sampleRate, renderCallback);
 }

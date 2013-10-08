@@ -9,5 +9,5 @@ gamepad:usePackage(nix)
 gamepad:addIncludePath("..")
 gamepad:addFiles([[
     Gamepad.cpp
-    PlatformClientGamepad.cpp
+    BrowserPlatformGamepad.cpp
 ]])

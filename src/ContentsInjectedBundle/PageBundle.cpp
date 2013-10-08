@@ -23,7 +23,7 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "PageBundle.h"
+#include <WebKit2/WKBundle.h>
 #include "BrowserPlatform.h"
 
 // I don't care about windows or gcc < 4.x right now.
@@ -31,22 +31,10 @@
 
 extern "C" {
 
-UIBUNDLE_EXPORT void WKBundleInitialize(WKBundleRef bundle, WKTypeRef initializationUserData)
+UIBUNDLE_EXPORT void WKBundleInitialize(WKBundleRef, WKTypeRef)
 {
-    // FIXME: Avoid this leak
-    new PageBundle(bundle);
+    static BrowserPlatform platform;
+    Nix::Platform::initialize(&platform);
 }
 
-}
-
-PageBundle::PageBundle(WKBundleRef bundle)
-    : m_bundle(bundle)
-{
-    m_platform = new BrowserPlatform();
-    Nix::Platform::initialize(m_platform);
-}
-
-PageBundle::~PageBundle()
-{
-    delete m_platform;
 }

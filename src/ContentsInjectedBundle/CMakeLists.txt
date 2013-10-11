@@ -4,6 +4,7 @@ include_directories(
 
 add_subdirectory(audio)
 add_subdirectory(gamepad)
+add_subdirectory(mediaplayer)
 
 set(PageBundle_SOURCES
   PageBundle.cpp
@@ -14,6 +15,7 @@ set(PageBundle_LIBRARIES
   ${WebKitNix_LIBRARIES}
   audio
   gamepad
+  mediaplayer
 )
 
 add_library(PageBundle SHARED ${PageBundle_SOURCES})

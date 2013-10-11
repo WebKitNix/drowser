@@ -33,6 +33,9 @@ public:
     // FFTFrame
     virtual Nix::FFTFrame* createFFTFrame(unsigned fftsize);
     virtual Nix::FFTFrame* createFFTFrame(const Nix::FFTFrame* frame);
+
+    // Media player
+    virtual Nix::MediaPlayer* createMediaPlayer(Nix::MediaPlayerClient*);
 private:
     // Gamepad
     void initializeGamepadController();

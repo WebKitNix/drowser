@@ -26,6 +26,7 @@
 #include "MediaPlayer.h"
 #include "BrowserPlatform.h"
 
+#include <gst/audio/streamvolume.h>
 #include <cassert>
 #include <cstdio>
 
@@ -105,14 +106,14 @@ void MediaPlayer::seek(float)
 
 }
 
-void MediaPlayer::setVolume(float)
+void MediaPlayer::setVolume(float volume)
 {
-
+    gst_stream_volume_set_volume(GST_STREAM_VOLUME(m_playBin), GST_STREAM_VOLUME_FORMAT_LINEAR, volume);
 }
 
-void MediaPlayer::setMuted(bool)
+void MediaPlayer::setMuted(bool mute)
 {
-
+    gst_stream_volume_set_mute(GST_STREAM_VOLUME(m_playBin), mute);
 }
 
 void MediaPlayer::supportsType(const char*, const char*)

@@ -68,26 +68,13 @@ GamepadDevice::GamepadDevice(int fd, Nix::Gamepad* gamepad)
     , m_inputStream(0)
     , m_source(0)
 {
-    char deviceId[Nix::Gamepad::idLengthCap];
-    if (ioctl(m_fileDescriptor, JSIOCGNAME(sizeof(deviceId)), deviceId) < 0)
+    memset(m_nixGamepad->id, 0, sizeof(m_nixGamepad->id));
+    if (ioctl(m_fileDescriptor, JSIOCGNAME(sizeof(m_nixGamepad->id)), m_nixGamepad->id) < 0)
         return;
-
     uint8_t numberOfAxes;
     uint8_t numberOfButtons;
     if (ioctl(m_fileDescriptor, JSIOCGAXES, &numberOfAxes) < 0 || ioctl(m_fileDescriptor, JSIOCGBUTTONS, &numberOfButtons) < 0)
         return;
-
-    memset(m_nixGamepad->id, 0, Nix::Gamepad::idLengthCap);
-
-    gsize bytesWritten, bytesRead;
-    GError* error = 0;
-    gchar* deviceIdUTF16 = g_convert(deviceId, -1, "UTF-16", "ASCII", &bytesRead, &bytesWritten, &error);
-
-    if (!error) {
-        memcpy(m_nixGamepad->id, deviceIdUTF16, bytesWritten);
-        g_free(deviceIdUTF16);
-    } else
-        g_error_free(error);
 
     m_nixGamepad->connected = false;
     m_nixGamepad->timestamp = 0;

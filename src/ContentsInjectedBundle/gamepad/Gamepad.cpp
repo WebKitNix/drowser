@@ -204,11 +204,6 @@ GamepadController::~GamepadController()
     m_gamepadDevices.clear();
 }
 
-GamepadController* GamepadController::create()
-{
-    return new GamepadController();
-}
-
 void GamepadController::registerDevice(const char* deviceFile)
 {
     for (unsigned index = 0; index < m_gamepadDevices.size(); index++) {

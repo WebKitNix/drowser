@@ -7,5 +7,4 @@ extern bool initializeAudioBackend();
 BrowserPlatform::BrowserPlatform()
 {
     initializeAudioBackend();
-    initializeGamepadController();
 }

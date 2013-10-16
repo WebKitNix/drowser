@@ -36,10 +36,6 @@ public:
 
     // Media player
     virtual Nix::MediaPlayer* createMediaPlayer(Nix::MediaPlayerClient*);
-private:
-    // Gamepad
-    void initializeGamepadController();
-    GamepadController* m_gamepadController;
 };
 
 #endif

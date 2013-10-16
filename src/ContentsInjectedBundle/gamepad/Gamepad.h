@@ -41,13 +41,12 @@ class GamepadDevice;
 
 class GamepadController {
 public:
-    static GamepadController* create();
+    GamepadController();
     ~GamepadController();
 
     void sampleGamepads(Nix::Gamepads&);
 
 private:
-    GamepadController();
 
     void registerDevice(const char*);
     void unregisterDevice(const char*);

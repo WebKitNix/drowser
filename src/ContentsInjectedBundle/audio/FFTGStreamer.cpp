@@ -41,11 +41,6 @@ Nix::FFTFrame* BrowserPlatform::createFFTFrame(unsigned fftSize)
     return new FFTGStreamer(fftSize);
 }
 
-Nix::FFTFrame* BrowserPlatform::createFFTFrame(const Nix::FFTFrame* frame)
-{
-    return new FFTGStreamer(*frame);
-}
-
 unsigned frequencyDomainSize(unsigned fftSize)
 {
     return fftSize / 2 + 1;
@@ -58,27 +53,6 @@ FFTGStreamer::FFTGStreamer(unsigned fftSize)
     m_complexData = new GstFFTF32Complex[m_frequencyDomainSize];
     m_realData = new float[m_frequencyDomainSize];
     m_imagData = new float[m_frequencyDomainSize];
-
-    int fftLength = gst_fft_next_fast_length(m_fftSize);
-    m_forward = gst_fft_f32_new(fftLength, FALSE);
-    m_inverse = gst_fft_f32_new(fftLength, TRUE);
-}
-
-FFTGStreamer::FFTGStreamer(const FFTFrame& frame)
-    : m_fftSize(0)
-{
-    const FFTGStreamer* other_frame = static_cast<const FFTGStreamer*>(&frame);
-    m_fftSize = other_frame->m_fftSize;
-    m_frequencyDomainSize = other_frame->m_frequencyDomainSize;
-
-    m_complexData = new GstFFTF32Complex[m_frequencyDomainSize];
-    memcpy(m_complexData, other_frame->m_complexData, sizeof(GstFFTF32Complex)*m_frequencyDomainSize);
-
-    m_realData = new float[m_frequencyDomainSize];
-    memcpy(m_realData, other_frame->m_realData, sizeof(float)*m_frequencyDomainSize);
-
-    m_imagData = new float[m_frequencyDomainSize];
-    memcpy(m_imagData, other_frame->m_imagData, sizeof(float)*m_frequencyDomainSize);
 
     int fftLength = gst_fft_next_fast_length(m_fftSize);
     m_forward = gst_fft_f32_new(fftLength, FALSE);
@@ -98,10 +72,31 @@ FFTGStreamer::~FFTGStreamer()
         gst_fft_f32_free(m_inverse);
 }
 
+FFTFrame* FFTGStreamer::copy() const
+{
+    FFTGStreamer* copy = new FFTGStreamer;
+    copy->m_fftSize = m_fftSize;
+    copy->m_frequencyDomainSize = m_frequencyDomainSize;
+
+    copy->m_complexData = new GstFFTF32Complex[m_frequencyDomainSize];
+    memcpy(copy->m_complexData, m_complexData, sizeof(GstFFTF32Complex) * m_frequencyDomainSize);
+
+    copy->m_realData = new float[m_frequencyDomainSize];
+    memcpy(copy->m_realData, m_realData, sizeof(float) * m_frequencyDomainSize);
+
+    copy->m_imagData = new float[m_frequencyDomainSize];
+    memcpy(copy->m_imagData, m_imagData, sizeof(float)*m_frequencyDomainSize);
+
+    int fftLength = gst_fft_next_fast_length(m_fftSize);
+    copy->m_forward = gst_fft_f32_new(fftLength, FALSE);
+    copy->m_inverse = gst_fft_f32_new(fftLength, TRUE);
+
+    return copy;
+}
+
 void FFTGStreamer::doFFT(const float* data)
 {
     gst_fft_f32_fft(m_forward, data, m_complexData);
-
     updatePlanarData();
 }
 
@@ -109,30 +104,6 @@ void FFTGStreamer::doInverseFFT(float* data)
 {
     updateComplexData();
     gst_fft_f32_inverse_fft(m_inverse, m_complexData, data);
-}
-
-void FFTGStreamer::multiply(const FFTFrame& frame)
-{
-    // Multiply both frames element-wise. In the ideal case we'd implement this using
-    // optimized SSE2 or ARM instructions.
-
-    const FFTGStreamer* other_frame = static_cast<const FFTGStreamer*>(&frame);
-
-    float* real1P = realData();
-    float* imag1P = imagData();
-
-    const float* real2P = other_frame->realData();
-    const float* imag2P = other_frame->imagData();
-
-    const unsigned framesToProcess = m_frequencyDomainSize;
-
-    for (unsigned i = 0; i < framesToProcess; ++i) {
-        float realResult = real1P[i] * real2P[i] - imag1P[i] * imag2P[i];
-        float imagResult = real1P[i] * imag2P[i] + imag1P[i] * real2P[i];
-
-        real1P[i] = realResult;
-        imag1P[i] = imagResult;
-    }
 }
 
 unsigned FFTGStreamer::frequencyDomainSampleCount() const

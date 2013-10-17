@@ -38,18 +38,18 @@ G_END_DECLS
 class FFTGStreamer : public Nix::FFTFrame {
 public:
     FFTGStreamer(unsigned fftSize);
-    FFTGStreamer(const FFTFrame& frame);
     ~FFTGStreamer();
 
+    virtual FFTFrame* copy() const;
     virtual void doFFT(const float* data);
     virtual void doInverseFFT(float* data);
-    virtual void multiply(const FFTFrame& frame); // multiplies ourself with frame : effectively operator*=()
 
     virtual unsigned frequencyDomainSampleCount() const;
     virtual float* realData() const;
     virtual float* imagData() const;
 
 private:
+    FFTGStreamer() {}
 
     void updatePlanarData();
     void updateComplexData();

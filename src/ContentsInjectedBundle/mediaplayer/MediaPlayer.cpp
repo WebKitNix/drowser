@@ -56,6 +56,7 @@ MediaPlayer::MediaPlayer(Nix::MediaPlayerClient* client)
     : Nix::MediaPlayer(client)
     , m_playBin(nullptr)
     , m_paused(true)
+    , m_isLive(false)
 {
 }
 
@@ -131,15 +132,14 @@ void MediaPlayer::load(const char* url)
     }
 
     g_object_set(m_playBin, "uri", url, NULL);
+
     gst_element_set_state(m_playBin, GST_STATE_PAUSED);
     setDownloadBuffering();
-    return;
 }
 
 void MediaPlayer::onGstBusMessage(GstBus*, GstMessage* msg, MediaPlayer* self)
 {
     GstElement* playBin = self->m_playBin;
-
     switch (GST_MESSAGE_TYPE(msg)) {
     case GST_MESSAGE_ERROR: {
           GError *err;
@@ -154,7 +154,11 @@ void MediaPlayer::onGstBusMessage(GstBus*, GstMessage* msg, MediaPlayer* self)
     case GST_MESSAGE_EOS:
           gst_element_set_state(playBin, GST_STATE_READY);
           break;
+
     case GST_MESSAGE_BUFFERING: {
+        if (self->m_isLive)
+            return;
+
         int percent = 0;
         gst_message_parse_buffering(msg, &percent);
         if (percent < 100) {
@@ -177,6 +181,37 @@ void MediaPlayer::onGstBusMessage(GstBus*, GstMessage* msg, MediaPlayer* self)
         break;
     case GST_MESSAGE_DURATION_CHANGED:
         self->m_playerClient->durationChanged();
+        break;
+
+    case GST_MESSAGE_STATE_CHANGED:
+        // Ignore state changes from internal elements. They are
+        // forwarded to playbin anyway.
+        if (GST_MESSAGE_SRC(msg) == reinterpret_cast<GstObject*>(self->m_playBin))
+            self->updateStates();
+        break;
+    default:
+        break;
+    }
+}
+
+void MediaPlayer::updateStates()
+{
+    GstState state;
+    GstState pending;
+
+    GstStateChangeReturn ret = gst_element_get_state(m_playBin,
+        &state, &pending, 250 * GST_NSECOND);
+
+    switch (ret) {
+    case GST_STATE_CHANGE_FAILURE:
+        GST_WARNING("Failed to change state");
+        break;
+    case GST_STATE_CHANGE_SUCCESS:
+        m_isLive = false;
+        break;
+    case GST_STATE_CHANGE_NO_PREROLL:
+        m_isLive = true;
+        setDownloadBuffering();
         break;
     default:
         break;
@@ -230,5 +265,9 @@ void MediaPlayer::setDownloadBuffering()
 
     GstPlayFlags flags;
     g_object_get(m_playBin, "flags", &flags, NULL);
-    g_object_set(m_playBin, "flags", flags | GST_PLAY_FLAG_DOWNLOAD, NULL);
+    // TODO add support for "auto" downloading...
+    if (m_isLive)
+        g_object_set(m_playBin, "flags", flags & ~GST_PLAY_FLAG_DOWNLOAD, NULL);
+    else
+        g_object_set(m_playBin, "flags", flags | GST_PLAY_FLAG_DOWNLOAD, NULL);
 }

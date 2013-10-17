@@ -47,9 +47,11 @@ public:
 private:
     GstElement* m_playBin;
     bool m_paused;
+    bool m_isLive;
 
     bool createPlayBin();
     void setDownloadBuffering();
+    void updateStates();
 
     static void onGstBusMessage(GstBus*, GstMessage*, MediaPlayer*);
 };

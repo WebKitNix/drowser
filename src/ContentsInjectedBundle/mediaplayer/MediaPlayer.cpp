@@ -28,7 +28,11 @@
 
 #include <gst/audio/streamvolume.h>
 #include <cassert>
+#include <cmath>
 #include <cstdio>
+#include <limits>
+
+using namespace std;
 
 // GstPlayFlags flags from playbin. It is the policy of GStreamer to
 // not publicly expose element-specific enums. That's why this
@@ -57,6 +61,9 @@ MediaPlayer::MediaPlayer(Nix::MediaPlayerClient* client)
     , m_playBin(nullptr)
     , m_paused(true)
     , m_isLive(false)
+    , m_seeking(false)
+    , m_pendingSeek(false)
+    , m_playbackRate(1)
 {
 }
 
@@ -102,9 +109,59 @@ float MediaPlayer::currentTime() const
     return 0;
 }
 
-void MediaPlayer::seek(float)
+void MediaPlayer::seek(float time)
 {
+    if (!m_playBin)
+        return;
 
+    if (time == currentTime())
+        return;
+
+    if (m_isLive)
+        return;
+
+    m_seekTime = time;
+
+    if (m_seeking) {
+        m_pendingSeek = true;
+        return;
+    }
+
+    GstState state;
+    gst_element_get_state(m_playBin, &state, 0, 0);
+    if (state != GST_STATE_PAUSED && state != GST_STATE_PLAYING)
+        return;
+
+    float seconds;
+    float microSeconds = modff(time, &seconds) * 1000000;
+    GTimeVal timeValue;
+    timeValue.tv_sec = static_cast<glong>(seconds);
+    timeValue.tv_usec = static_cast<glong>(roundf(microSeconds / 10000) * 10000);
+
+    if (!gst_element_seek(m_playBin, m_playbackRate, GST_FORMAT_TIME, static_cast<GstSeekFlags>(GST_SEEK_FLAG_FLUSH | GST_SEEK_FLAG_ACCURATE),
+                          GST_SEEK_TYPE_SET, GST_TIMEVAL_TO_TIME(timeValue), GST_SEEK_TYPE_NONE, GST_CLOCK_TIME_NONE)) {
+        return;
+    }
+
+    m_seeking = true;
+}
+
+bool MediaPlayer::seeking() const
+{
+    return m_seeking;
+}
+
+float MediaPlayer::maxTimeSeekable() const
+{
+    if (m_isLive)
+        return numeric_limits<float>::infinity();
+
+    return duration();
+}
+
+void MediaPlayer::setPlaybackRate(float playbackRate)
+{
+    m_playbackRate = playbackRate;
 }
 
 void MediaPlayer::setVolume(float volume)
@@ -182,8 +239,8 @@ void MediaPlayer::onGstBusMessage(GstBus*, GstMessage* msg, MediaPlayer* self)
     case GST_MESSAGE_DURATION_CHANGED:
         self->m_playerClient->durationChanged();
         break;
-
     case GST_MESSAGE_STATE_CHANGED:
+    case GST_MESSAGE_ASYNC_DONE:
         // Ignore state changes from internal elements. They are
         // forwarded to playbin anyway.
         if (GST_MESSAGE_SRC(msg) == reinterpret_cast<GstObject*>(self->m_playBin))
@@ -208,6 +265,14 @@ void MediaPlayer::updateStates()
         break;
     case GST_STATE_CHANGE_SUCCESS:
         m_isLive = false;
+        if (state == GST_STATE_PAUSED || state == GST_STATE_PLAYING) {
+            m_seeking = false;
+
+            if (m_pendingSeek) {
+                m_pendingSeek = false;
+                seek(m_seekTime);
+            }
+        }
         break;
     case GST_STATE_CHANGE_NO_PREROLL:
         m_isLive = true;

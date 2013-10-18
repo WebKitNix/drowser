@@ -43,11 +43,18 @@ public:
     virtual void setMuted(bool);
     virtual void supportsType(const char*, const char*);
     virtual void load(const char* url);
+    virtual bool seeking() const;
+    virtual float maxTimeSeekable() const;
+    virtual void setPlaybackRate(float);
 
 private:
     GstElement* m_playBin;
     bool m_paused;
     bool m_isLive;
+    bool m_seeking;
+    bool m_pendingSeek;
+    float m_playbackRate;
+    float m_seekTime;
 
     bool createPlayBin();
     void setDownloadBuffering();

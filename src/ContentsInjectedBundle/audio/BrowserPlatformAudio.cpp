@@ -18,7 +18,7 @@ bool initializeAudioBackend()
     return didInitialize;
 }
 
-bool BrowserPlatform::loadAudioResource(AudioBus* destinationBus, const char* audioFileData, size_t dataSize, double sampleRate)
+bool BrowserPlatform::loadAudioResource(AudioBus* destinationBus, const void* audioFileData, size_t dataSize, double sampleRate)
 {
     return AudioFileReader(audioFileData, dataSize).createBus(destinationBus, sampleRate);
 }

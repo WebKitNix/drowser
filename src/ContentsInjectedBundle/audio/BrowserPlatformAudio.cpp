@@ -23,11 +23,6 @@ bool BrowserPlatform::loadAudioResource(AudioBus* destinationBus, const void* au
     return AudioFileReader(audioFileData, dataSize).createBus(destinationBus, sampleRate);
 }
 
-Data BrowserPlatform::loadResource(const char* name)
-{
-    return AudioFileReader::loadResource(name);
-}
-
 AudioDevice* BrowserPlatform::createAudioDevice(size_t bufferSize, unsigned numberOfInputChannels, unsigned numberOfChannels, double sampleRate, AudioDevice::RenderCallback* renderCallback)
 {
     return new GstAudioDevice(bufferSize, numberOfInputChannels, numberOfChannels, sampleRate, renderCallback);

@@ -18,10 +18,6 @@ public:
     // Pass in (numberOfInputChannels > 0) if live/local audio input is desired.
     virtual Nix::AudioDevice* createAudioDevice(size_t bufferSize, unsigned numberOfInputChannels, unsigned numberOfChannels, double sampleRate, Nix::AudioDevice::RenderCallback* renderCallback);
 
-    // Resources -----------------------------------------------------------
-    // Returns a blob of data corresponding to the named resource.
-    virtual Nix::Data loadResource(const char* name);
-
     // Decodes the in-memory audio file data and returns the linear PCM audio data in the destinationBus.
     // A sample-rate conversion to sampleRate will occur if the file data is at a different sample-rate.
     // Returns true on success.

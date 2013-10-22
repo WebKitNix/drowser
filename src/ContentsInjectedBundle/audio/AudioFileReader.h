@@ -11,8 +11,6 @@ public:
     AudioFileReader(const void* data, size_t dataSize);
     ~AudioFileReader();
 
-    static Nix::Data loadResource(const char* name);
-
     bool createBus(Nix::AudioBus* destinationBus, float sampleRate);
 
     GstFlowReturn handleSample(GstAppSink*);

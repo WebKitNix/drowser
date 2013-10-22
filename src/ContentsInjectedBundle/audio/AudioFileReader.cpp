@@ -35,18 +35,6 @@
 
 using namespace Nix;
 
-Data AudioFileReader::loadResource(const char* name)
-{
-    FILE* pFile = fopen(name, "rb");
-    fseek(pFile , 0 , SEEK_END);
-    Data data(ftell(pFile));
-    rewind(pFile);
-    fread(data.data(), data.size(), 1, pFile);
-    fclose(pFile);
-
-    return data;
-}
-
 static GstCaps* getGStreamerAudioCaps(int channels, float sampleRate)
 {
     return gst_caps_new_simple("audio/x-raw", "rate", G_TYPE_INT, static_cast<int>(sampleRate),

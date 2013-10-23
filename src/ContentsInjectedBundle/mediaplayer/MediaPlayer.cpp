@@ -174,6 +174,11 @@ void MediaPlayer::setMuted(bool mute)
     gst_stream_volume_set_mute(GST_STREAM_VOLUME(m_playBin), mute);
 }
 
+bool MediaPlayer::isLiveStream() const
+{
+    return m_isLive;
+}
+
 void MediaPlayer::load(const char* url)
 {
     gst_init_check(0, 0, 0);
@@ -272,6 +277,11 @@ void MediaPlayer::updateStates()
     case GST_STATE_CHANGE_NO_PREROLL:
         m_isLive = true;
         setDownloadBuffering();
+
+        if (state == GST_STATE_PAUSED) {
+            m_playerClient->readyStateChanged(Nix::MediaPlayerClient::HaveEnoughData);
+            m_playerClient->networkStateChanged(Nix::MediaPlayerClient::Loading);
+        }
         break;
     default:
         break;

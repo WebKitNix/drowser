@@ -34,6 +34,7 @@ class MediaPlayer : public Nix::MediaPlayer
 public:
     MediaPlayer(Nix::MediaPlayerClient*);
     virtual ~MediaPlayer();
+
     virtual void play() override;
     virtual void pause() override;
     virtual float duration() const override;
@@ -45,6 +46,7 @@ public:
     virtual bool seeking() const override;
     virtual float maxTimeSeekable() const override;
     virtual void setPlaybackRate(float) override;
+    virtual bool isLiveStream() const override;
 
 private:
     GstElement* m_playBin;

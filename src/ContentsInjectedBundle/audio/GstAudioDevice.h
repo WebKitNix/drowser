@@ -9,10 +9,10 @@ public:
     GstAudioDevice(size_t bufferSize, unsigned numberOfInputChannels, unsigned numberOfChannels, double sampleRate, Nix::AudioDevice::RenderCallback* renderCallback);
     virtual ~GstAudioDevice();
 
-    virtual void start();
-    virtual void stop();
+    virtual void start() override;
+    virtual void stop() override;
 
-    double sampleRate() { return m_sampleRate; }
+    virtual double sampleRate() override { return m_sampleRate; }
 
     void finishBuildingPipelineAfterWavParserPadReady(GstPad*);
 

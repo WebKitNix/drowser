@@ -40,13 +40,13 @@ public:
     FFTGStreamer(unsigned fftSize);
     ~FFTGStreamer();
 
-    virtual FFTFrame* copy() const;
-    virtual void doFFT(const float* data);
-    virtual void doInverseFFT(float* data);
+    virtual FFTFrame* copy() const override;
+    virtual void doFFT(const float* data) override;
+    virtual void doInverseFFT(float* data) override;
 
-    virtual unsigned frequencyDomainSampleCount() const;
-    virtual float* realData() const;
-    virtual float* imagData() const;
+    virtual unsigned frequencyDomainSampleCount() const override;
+    virtual float* realData() const override;
+    virtual float* imagData() const override;
 
 private:
     FFTGStreamer() {}

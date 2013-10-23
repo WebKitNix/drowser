@@ -34,18 +34,17 @@ class MediaPlayer : public Nix::MediaPlayer
 public:
     MediaPlayer(Nix::MediaPlayerClient*);
     virtual ~MediaPlayer();
-    virtual void play();
-    virtual void pause();
-    virtual float duration() const;
-    virtual float currentTime() const;
-    virtual void seek(float);
-    virtual void setVolume(float);
-    virtual void setMuted(bool);
-    virtual void supportsType(const char*, const char*);
-    virtual void load(const char* url);
-    virtual bool seeking() const;
-    virtual float maxTimeSeekable() const;
-    virtual void setPlaybackRate(float);
+    virtual void play() override;
+    virtual void pause() override;
+    virtual float duration() const override;
+    virtual float currentTime() const override;
+    virtual void seek(float) override;
+    virtual void setVolume(float) override;
+    virtual void setMuted(bool) override;
+    virtual void load(const char* url) override;
+    virtual bool seeking() const override;
+    virtual float maxTimeSeekable() const override;
+    virtual void setPlaybackRate(float) override;
 
 private:
     GstElement* m_playBin;

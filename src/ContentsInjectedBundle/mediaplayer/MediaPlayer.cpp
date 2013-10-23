@@ -174,11 +174,6 @@ void MediaPlayer::setMuted(bool mute)
     gst_stream_volume_set_mute(GST_STREAM_VOLUME(m_playBin), mute);
 }
 
-void MediaPlayer::supportsType(const char*, const char*)
-{
-
-}
-
 void MediaPlayer::load(const char* url)
 {
     gst_init_check(0, 0, 0);

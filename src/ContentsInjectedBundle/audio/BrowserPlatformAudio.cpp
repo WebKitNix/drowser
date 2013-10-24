@@ -2,7 +2,7 @@
 #include "AudioFileReader.h"
 #include "GstAudioDevice.h"
 
-#include <NixPlatform/AudioBus.h>
+#include <NixPlatform/MultiChannelPCMData.h>
 
 #include <cstdio>
 
@@ -18,9 +18,9 @@ bool initializeAudioBackend()
     return didInitialize;
 }
 
-bool BrowserPlatform::loadAudioResource(AudioBus* destinationBus, const void* audioFileData, size_t dataSize, double sampleRate)
+MultiChannelPCMData* BrowserPlatform::decodeAudioResource(const void* audioFileData, size_t dataSize, double sampleRate)
 {
-    return AudioFileReader(audioFileData, dataSize).createBus(destinationBus, sampleRate);
+    return AudioFileReader(audioFileData, dataSize).createBus(sampleRate);
 }
 
 AudioDevice* BrowserPlatform::createAudioDevice(size_t bufferSize, unsigned numberOfInputChannels, unsigned numberOfChannels, double sampleRate, AudioDevice::RenderCallback* renderCallback)

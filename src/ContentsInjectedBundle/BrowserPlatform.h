@@ -19,9 +19,7 @@ public:
     virtual Nix::AudioDevice* createAudioDevice(size_t bufferSize, unsigned numberOfInputChannels, unsigned numberOfChannels, double sampleRate, Nix::AudioDevice::RenderCallback* renderCallback) override;
 
     // Decodes the in-memory audio file data and returns the linear PCM audio data in the destinationBus.
-    // A sample-rate conversion to sampleRate will occur if the file data is at a different sample-rate.
-    // Returns true on success.
-    virtual bool loadAudioResource(Nix::AudioBus* destinationBus, const void* audioFileData, size_t dataSize, double sampleRate) override;
+    virtual Nix::MultiChannelPCMData* decodeAudioResource(const void* audioFileData, size_t dataSize, double sampleRate) override;
 
     // Gamepad
     virtual void sampleGamepads(Nix::Gamepads& into) override;

@@ -19,7 +19,7 @@
 
 #include "AudioFileReader.h"
 
-#include <NixPlatform/AudioBus.h>
+#include <NixPlatform/MultiChannelPCMData.h>
 
 #include <gio/gio.h>
 #include <gst/gst.h>
@@ -303,7 +303,7 @@ void AudioFileReader::decodeAudioForBusCreation()
     gst_element_set_state(m_pipeline, GST_STATE_PAUSED);
 }
 
-bool AudioFileReader::createBus(AudioBus* destinationBus, float sampleRate)
+MultiChannelPCMData* AudioFileReader::createBus(float sampleRate)
 {
     m_sampleRate = sampleRate;
 
@@ -324,13 +324,12 @@ bool AudioFileReader::createBus(AudioBus* destinationBus, float sampleRate)
     g_main_context_pop_thread_default(context);
 
     if (m_errorOccurred)
-        return false;
+        return nullptr;
 
     // This allocates everything for us (stereo)! :)
-    destinationBus->initialize(2, m_channelSize, m_sampleRate);
+    MultiChannelPCMData* pcmData = new MultiChannelPCMData(2, m_channelSize, m_sampleRate);
+    copyGStreamerBuffersToAudioChannel(m_frontLeftBuffers, pcmData->channelData(0));
+    copyGStreamerBuffersToAudioChannel(m_frontRightBuffers, pcmData->channelData(1));
 
-    copyGStreamerBuffersToAudioChannel(m_frontLeftBuffers, destinationBus->channelData(0));
-    copyGStreamerBuffersToAudioChannel(m_frontRightBuffers, destinationBus->channelData(1));
-
-    return true;
+    return pcmData;
 }

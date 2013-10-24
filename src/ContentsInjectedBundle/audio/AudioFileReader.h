@@ -11,7 +11,7 @@ public:
     AudioFileReader(const void* data, size_t dataSize);
     ~AudioFileReader();
 
-    bool createBus(Nix::AudioBus* destinationBus, float sampleRate);
+    Nix::MultiChannelPCMData* createBus(float sampleRate);
 
     GstFlowReturn handleSample(GstAppSink*);
     gboolean handleMessage(GstMessage*);

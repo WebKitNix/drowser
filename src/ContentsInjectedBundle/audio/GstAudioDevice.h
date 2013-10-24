@@ -6,7 +6,7 @@
 
 class GstAudioDevice : public Nix::AudioDevice {
 public:
-    GstAudioDevice(size_t bufferSize, unsigned numberOfInputChannels, unsigned numberOfChannels, double sampleRate, Nix::AudioDevice::RenderCallback* renderCallback);
+    GstAudioDevice(const char*, size_t bufferSize, unsigned numberOfInputChannels, unsigned numberOfChannels, double sampleRate, Nix::AudioDevice::RenderCallback* renderCallback);
     virtual ~GstAudioDevice();
 
     virtual void start() override;

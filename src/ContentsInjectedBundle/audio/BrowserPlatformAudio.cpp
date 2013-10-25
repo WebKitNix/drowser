@@ -23,7 +23,7 @@ MultiChannelPCMData* BrowserPlatform::decodeAudioResource(const void* audioFileD
     return AudioFileReader(audioFileData, dataSize).createBus(sampleRate);
 }
 
-AudioDevice* BrowserPlatform::createAudioDevice(size_t bufferSize, unsigned numberOfInputChannels, unsigned numberOfChannels, double sampleRate, AudioDevice::RenderCallback* renderCallback)
+AudioDevice* BrowserPlatform::createAudioDevice(const char* inputDeviceId, size_t bufferSize, unsigned numberOfInputChannels, unsigned numberOfChannels, double sampleRate, AudioDevice::RenderCallback* renderCallback)
 {
-    return new GstAudioDevice(bufferSize, numberOfInputChannels, numberOfChannels, sampleRate, renderCallback);
+    return new GstAudioDevice(inputDeviceId, bufferSize, numberOfInputChannels, numberOfChannels, sampleRate, renderCallback);
 }

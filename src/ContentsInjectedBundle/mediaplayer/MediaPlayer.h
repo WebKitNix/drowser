@@ -54,8 +54,12 @@ private:
     bool m_isLive;
     bool m_seeking;
     bool m_pendingSeek;
+    bool m_bufferingFinished;
     float m_playbackRate;
     float m_seekTime;
+    Nix::MediaPlayerClient::ReadyState m_readyState;
+    Nix::MediaPlayerClient::NetworkState m_networkState;
+
 
     bool createPlayBin();
     void setDownloadBuffering();

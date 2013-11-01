@@ -63,7 +63,10 @@ MediaPlayer::MediaPlayer(Nix::MediaPlayerClient* client)
     , m_isLive(false)
     , m_seeking(false)
     , m_pendingSeek(false)
+    , m_bufferingFinished(false)
     , m_playbackRate(1)
+    , m_readyState(Nix::MediaPlayerClient::HaveNothing)
+    , m_networkState(Nix::MediaPlayerClient::Empty)
 {
 }
 
@@ -220,11 +223,10 @@ void MediaPlayer::onGstBusMessage(GstBus*, GstMessage* msg, MediaPlayer* self)
         gst_message_parse_buffering(msg, &percent);
         if (percent < 100) {
             gst_element_set_state(playBin, GST_STATE_PAUSED);
-            self->m_playerClient->readyStateChanged(Nix::MediaPlayerClient::HaveCurrentData);
         } else {
             // the duration is available now.
             self->m_playerClient->durationChanged();
-            self->m_playerClient->readyStateChanged(Nix::MediaPlayerClient::HaveEnoughData);
+            self->m_bufferingFinished = true;
             if (!self->m_paused)
                gst_element_set_state(playBin, GST_STATE_PLAYING);
         }
@@ -259,19 +261,43 @@ void MediaPlayer::updateStates()
     GstStateChangeReturn ret = gst_element_get_state(m_playBin,
         &state, &pending, 250 * GST_NSECOND);
 
+    Nix::MediaPlayerClient::ReadyState oldReadyState = m_readyState;
+    Nix::MediaPlayerClient::NetworkState oldNetworkState = m_networkState;
+
     switch (ret) {
     case GST_STATE_CHANGE_FAILURE:
         GST_WARNING("Failed to change state");
         break;
     case GST_STATE_CHANGE_SUCCESS:
         m_isLive = false;
-        if (state == GST_STATE_PAUSED || state == GST_STATE_PLAYING) {
-            m_seeking = false;
+
+        switch (state) {
+        case GST_STATE_READY:
+            m_readyState = Nix::MediaPlayerClient::HaveMetadata;
+            m_networkState = Nix::MediaPlayerClient::Empty;
+            break;
+        case GST_STATE_PAUSED:
+        case GST_STATE_PLAYING:
+            if (m_seeking) {
+                m_seeking = false;
+                m_playerClient->currentTimeChanged();
+            }
+
+            if (m_bufferingFinished) {
+                m_readyState = Nix::MediaPlayerClient::HaveEnoughData;
+                m_networkState = Nix::MediaPlayerClient::Loaded;
+            } else {
+                m_readyState = Nix::MediaPlayerClient::HaveCurrentData;
+                m_networkState = Nix::MediaPlayerClient::Loading;
+            }
 
             if (m_pendingSeek) {
                 m_pendingSeek = false;
                 seek(m_seekTime);
             }
+            break;
+        default:
+            break;
         }
         break;
     case GST_STATE_CHANGE_NO_PREROLL:
@@ -279,13 +305,19 @@ void MediaPlayer::updateStates()
         setDownloadBuffering();
 
         if (state == GST_STATE_PAUSED) {
-            m_playerClient->readyStateChanged(Nix::MediaPlayerClient::HaveEnoughData);
-            m_playerClient->networkStateChanged(Nix::MediaPlayerClient::Loading);
+            m_readyState = Nix::MediaPlayerClient::HaveEnoughData;
+            m_networkState = Nix::MediaPlayerClient::Loading;
         }
         break;
     default:
         break;
     }
+
+    if (oldReadyState != m_readyState)
+        m_playerClient->readyStateChanged(m_readyState);
+
+    if (oldNetworkState != m_networkState)
+        m_playerClient->networkStateChanged(m_networkState);
 }
 
 bool MediaPlayer::createPlayBin()

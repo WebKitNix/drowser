@@ -19,10 +19,6 @@ link_directories(
   ${GSTREAMER-PBUTILS_LIBRARY_DIRS}
 )
 
-include_directories(
-  ${WebKitNix_INCLUDE_DIRS}
-)
-
 set(mediaplayer_SOURCES
   MediaPlayer.cpp
 )

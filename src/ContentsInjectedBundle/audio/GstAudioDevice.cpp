@@ -22,32 +22,55 @@
 #include <gst/gst.h>
 #include <gst/pbutils/pbutils.h>
 
+#include <cstring>
+
 using namespace Nix;
 
-GstAudioDevice::GstAudioDevice(const char*,size_t bufferSize, unsigned numberOfInputChannels, unsigned numberOfChannels, double sampleRate, AudioDevice::RenderCallback* callback)
+static bool configureSinkDevice(GstElement* autoSink);
+
+GstAudioDevice::GstAudioDevice(const char* inputDeviceId, size_t bufferSize, unsigned numberOfInputChannels, unsigned numberOfOutputChannels, double sampleRate, AudioDevice::RenderCallback* renderCallback)
     : m_wavParserAvailable(false)
     , m_audioSinkAvailable(false)
     , m_pipeline(0)
     , m_sampleRate(sampleRate)
+    , m_bufferSize(bufferSize)
+    , m_providesLiveInput(false)
+    , m_inputDeviceId(0)
+    , m_renderCallback(renderCallback)
 {
-    // FIXME: NUMBER OF CHANNELS NOT USED??????????/ WHY??????????
+    if (inputDeviceId) {
+        m_inputDeviceId = new char[std::strlen(inputDeviceId) + 1];
+        std::strcpy(m_inputDeviceId, inputDeviceId);
+    }
+
+    // FIXME: The inputDeviceId is hardcoded.
+    if (numberOfInputChannels && !std::strcmp(m_inputDeviceId, "autoaudiosrc;default"))
+        m_providesLiveInput = true;
+
     m_pipeline = gst_pipeline_new("play");
 
     GstElement* webkitAudioSrc = reinterpret_cast<GstElement*>(g_object_new(WEBKIT_TYPE_WEB_AUDIO_SRC,
                                                                             "rate", sampleRate,
-                                                                            "handler", callback,
+                                                                            "output-channels", numberOfOutputChannels,
+                                                                            "input-channels", numberOfInputChannels,
+                                                                            "is-live", m_providesLiveInput,
+                                                                            "handler", renderCallback,
                                                                             "frames", bufferSize, NULL));
 
     GstElement* wavParser = gst_element_factory_make("wavparse", 0);
 
     m_wavParserAvailable = wavParser;
 
-    //ASSERT_WITH_MESSAGE(m_wavParserAvailable, "Failed to create GStreamer wavparse element");
-    if (!m_wavParserAvailable)
+    if (!m_wavParserAvailable) {
+        g_error("Failed to create GStreamer wavparse element");
         return;
+    }
 
     gst_bin_add_many(GST_BIN(m_pipeline), webkitAudioSrc, wavParser, NULL);
     gst_element_link_pads_full(webkitAudioSrc, "src", wavParser, "sink", GST_PAD_LINK_CHECK_NOTHING);
+
+    gst_element_sync_state_with_parent(webkitAudioSrc);
+    gst_element_sync_state_with_parent(wavParser);
 
     GstPad* srcPad = gst_element_get_static_pad(wavParser, "src");
     finishBuildingPipelineAfterWavParserPadReady(srcPad);
@@ -57,16 +80,21 @@ GstAudioDevice::~GstAudioDevice()
 {
     gst_element_set_state(m_pipeline, GST_STATE_NULL);
     gst_object_unref(m_pipeline);
+    delete m_inputDeviceId;
 }
 
 void GstAudioDevice::finishBuildingPipelineAfterWavParserPadReady(GstPad* pad)
 {
-    //FIXME: POSSIBLE LEAK!!!
     GstElement* audioSink = gst_element_factory_make("autoaudiosink", 0);
     m_audioSinkAvailable = audioSink;
 
     if (!audioSink)
         return;
+
+    if (providesLiveInput()) {
+        if (!configureSinkDevice(audioSink))
+            GST_WARNING_OBJECT(audioSink, "Couldn't configure sink device");
+    }
 
     // Autoaudiosink does the real sink detection in the GST_STATE_NULL->READY transition
     // so it's best to roll it to READY as soon as possible to ensure the underlying platform
@@ -88,7 +116,7 @@ void GstAudioDevice::finishBuildingPipelineAfterWavParserPadReady(GstPad* pad)
     // Link audioconvert to audiosink and roll states.
     gst_element_link_pads_full(audioConvert, "src", audioSink, "sink", GST_PAD_LINK_CHECK_NOTHING);
     gst_element_sync_state_with_parent(audioConvert);
-    gst_element_sync_state_with_parent(audioSink); //FIXME: I believe we should delete audioSink after this.
+    gst_element_sync_state_with_parent(audioSink);
 }
 
 void GstAudioDevice::start()
@@ -105,4 +133,30 @@ void GstAudioDevice::stop()
         return;
 
     gst_element_set_state(m_pipeline, GST_STATE_PAUSED);
+}
+
+static bool configureSinkDevice(GstElement* autoSink) {
+    GstElement* deviceElement;
+
+    GstChildProxy* childProxy = GST_CHILD_PROXY(autoSink);
+    if (!childProxy)
+        return false;
+
+    GstStateChangeReturn stateChangeResult = gst_element_set_state(autoSink, GST_STATE_READY);
+    if (stateChangeResult != GST_STATE_CHANGE_SUCCESS)
+        return false;
+
+    if (gst_child_proxy_get_children_count(childProxy))
+        deviceElement = GST_ELEMENT(gst_child_proxy_get_child_by_index(childProxy, 0));
+
+    // FIXME: Temporary workaround for pulsesink underflow warning issues
+    // probably something related to LATENCY event failing in "play"
+    // pipeline on startup. This adds some latency to the audio rendering.
+    g_object_set(deviceElement, "buffer-time", (gint64)100000, nullptr);
+    g_object_set(deviceElement, "latency-time", (gint64)100000, nullptr);
+    g_object_set(deviceElement, "drift-tolerance", (gint64)1000000, nullptr);
+
+    GST_WARNING_OBJECT(deviceElement, "configured.");
+    gst_object_unref(GST_OBJECT(deviceElement));
+    return true;
 }

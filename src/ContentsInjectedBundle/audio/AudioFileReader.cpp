@@ -283,7 +283,7 @@ void AudioFileReader::decodeAudioForBusCreation()
 {
     // Build the pipeline (giostreamsrc | filesrc) ! decodebin2
     // A deinterleave element is added once a src pad becomes available in decodebin.
-    m_pipeline = gst_pipeline_new(0);
+    m_pipeline = gst_pipeline_new("filereader");
 
     //FIXME: POSSIBLE LEAKING PTR WARNING
     GstBus* bus = gst_pipeline_get_bus(GST_PIPELINE(m_pipeline));

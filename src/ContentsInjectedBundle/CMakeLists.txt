@@ -5,6 +5,7 @@ include_directories(
 add_subdirectory(audio)
 add_subdirectory(gamepad)
 add_subdirectory(mediaplayer)
+add_subdirectory(mediastream)
 
 set(PageBundle_SOURCES
   PageBundle.cpp
@@ -16,6 +17,7 @@ set(PageBundle_LIBRARIES
   audio
   gamepad
   mediaplayer
+  mediastream
 )
 
 add_library(PageBundle SHARED ${PageBundle_SOURCES})

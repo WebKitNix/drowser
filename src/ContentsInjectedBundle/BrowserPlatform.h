@@ -18,6 +18,8 @@ public:
     // Pass in (numberOfInputChannels > 0) if live/local audio input is desired.
     virtual Nix::AudioDevice* createAudioDevice(const char* inputDeviceId, size_t bufferSize, unsigned numberOfInputChannels, unsigned numberOfChannels, double sampleRate, Nix::AudioDevice::RenderCallback* renderCallback) override;
 
+    virtual Nix::MediaStreamCenter* createMediaStreamCenter() override;
+
     // Decodes the in-memory audio file data and returns the linear PCM audio data in the destinationBus.
     virtual Nix::MultiChannelPCMData* decodeAudioResource(const void* audioFileData, size_t dataSize, double sampleRate) override;
 

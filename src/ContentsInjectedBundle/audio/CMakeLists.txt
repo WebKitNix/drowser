@@ -23,10 +23,11 @@ link_directories(
 )
 
 set(audio_SOURCES
-  GstAudioDevice.cpp
   AudioFileReader.cpp
-  FFTGStreamer.cpp
+  AudioLiveInputPipeline.cpp
   BrowserPlatformAudio.cpp
+  FFTGStreamer.cpp
+  GstAudioDevice.cpp
   WebKitWebAudioSourceGStreamer.cpp
 )
 

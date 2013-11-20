@@ -20,7 +20,7 @@ UNIX:browser:addFiles([[
 ]])
 
 browser:addIncludePath("../Shared")
-browser:addCustomFlags("-Wall -std=c++0x -D'UI_SEARCH_PATH=\""..browser:sourceDir().."ui\"'")
+browser:addCustomFlags("-D'UI_SEARCH_PATH=\""..browser:sourceDir().."ui\"'")
 
 -- Install routines
 browser:install("bin")

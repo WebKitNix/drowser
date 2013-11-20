@@ -3,6 +3,8 @@ openGL = findPackage("gl", REQUIRED)
 x11 = findPackage("x11", REQUIRED)
 nix = findPackage("WebKitNix", REQUIRED)
 
+addCustomFlags("-std=c++0x")
+
 addSubdirectory("Browser")
 addSubdirectory("ContentsInjectedBundle")
 addSubdirectory("UIInjectedBundle")

@@ -7,9 +7,10 @@ audio:usePackage(gstreamPbUtils)
 audio:usePackage(nix)
 audio:addIncludePath("..")
 audio:addFiles([[
-    GstAudioDevice.cpp
     AudioFileReader.cpp
-    FFTGStreamer.cpp
+    AudioLiveInputPipeline.cpp
     BrowserPlatformAudio.cpp
+    FFTGStreamer.cpp
+    GstAudioDevice.cpp
     WebKitWebAudioSourceGStreamer.cpp
 ]])

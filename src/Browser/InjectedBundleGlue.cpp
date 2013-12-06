@@ -44,12 +44,12 @@ static void didReceiveMessageFromInjectedBundle(WKContextRef page, WKStringRef m
 
 InjectedBundleGlue::InjectedBundleGlue(WKContextRef context)
 {
-    WKContextInjectedBundleClient bundleClient;
+    WKContextInjectedBundleClientV1 bundleClient;
     std::memset(&bundleClient, 0, sizeof(bundleClient));
-    bundleClient.clientInfo = this;
-    bundleClient.version = kWKContextInjectedBundleClientCurrentVersion;
+    bundleClient.base.clientInfo = this;
+    bundleClient.base.version = 1;
     bundleClient.didReceiveMessageFromInjectedBundle = ::didReceiveMessageFromInjectedBundle;
-    WKContextSetInjectedBundleClient(context, &bundleClient);
+    WKContextSetInjectedBundleClient(context, &bundleClient.base);
 }
 
 void InjectedBundleGlue::call(const std::string& messageName, WKTypeRef param) const

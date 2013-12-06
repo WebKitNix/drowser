@@ -126,10 +126,10 @@ void Browser::initUi()
 
     m_uiView = WKViewCreate(m_uiContext, m_uiPageGroup);
 
-    WKViewClient client;
-    std::memset(&client, 0, sizeof(WKViewClient));
-    client.version = kWKViewClientCurrentVersion;
-    client.clientInfo = this;
+    WKViewClientV0 client;
+    std::memset(&client, 0, sizeof(WKViewClientV0));
+    client.base.version = 0;
+    client.base.clientInfo = this;
     client.viewNeedsDisplay = [](WKViewRef, WKRect, const void* client) {
         ((Browser*)client)->scheduleUpdateDisplay();
     };
@@ -137,7 +137,7 @@ void Browser::initUi()
         puts("UI Webprocess crashed :-(");
     };
 
-    WKViewSetViewClient(m_uiView, &client);
+    WKViewSetViewClient(m_uiView, &client.base);
     WKViewInitialize(m_uiView);
     WKViewSetIsFocused(m_uiView, true);
     WKViewSetIsVisible(m_uiView, true);

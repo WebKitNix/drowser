@@ -58,15 +58,15 @@ Bundle::Bundle(WKBundleRef bundle)
     , m_jsContext(0)
     , m_windowObj(0)
 {
-    WKBundleClient client;
-    std::memset(&client, 0, sizeof(WKBundleClient));
+    WKBundleClientV1 client;
+    std::memset(&client, 0, sizeof(WKBundleClientV1));
 
-    client.version = kWKBundleClientCurrentVersion;
-    client.clientInfo = this;
+    client.base.version = 1;
+    client.base.clientInfo = this;
     client.didCreatePage = &Bundle::didCreatePage;
     client.didReceiveMessageToPage = &Bundle::didReceiveMessageToPage;
 
-    WKBundleSetClient(bundle, &client);
+    WKBundleSetClient(bundle, &client.base);
 }
 
 void Bundle::didClearWindowForFrame(WKBundlePageRef page, WKBundleFrameRef frame, WKBundleScriptWorldRef world, const void *clientInfo)
@@ -83,19 +83,19 @@ void Bundle::didClearWindowForFrame(WKBundlePageRef page, WKBundleFrameRef frame
 
 void Bundle::didCreatePage(WKBundleRef, WKBundlePageRef page, const void* clientInfo)
 {
-    WKBundlePageLoaderClient loaderClient;
-    std::memset(&loaderClient, 0, sizeof(WKBundlePageLoaderClient));
-    loaderClient.version = kWKBundlePageLoaderClientCurrentVersion;
-    loaderClient.clientInfo = clientInfo;
+    WKBundlePageLoaderClientV7 loaderClient;
+    std::memset(&loaderClient, 0, sizeof(WKBundlePageLoaderClientV7));
+    loaderClient.base.version = 7;
+    loaderClient.base.clientInfo = clientInfo;
     loaderClient.didClearWindowObjectForFrame = &Bundle::didClearWindowForFrame;
 
-    WKBundlePageSetPageLoaderClient(page, &loaderClient);
+    WKBundlePageSetPageLoaderClient(page, &loaderClient.base);
 
-    WKBundlePageUIClient uiClient;
-    std::memset(&uiClient, 0, sizeof(WKBundlePageUIClient));
-    uiClient.version = kWKBundlePageUIClientCurrentVersion;
+    WKBundlePageUIClientV2 uiClient;
+    std::memset(&uiClient, 0, sizeof(WKBundlePageUIClientV2));
+    uiClient.base.version = 2;
     uiClient.willRunJavaScriptAlert = &Bundle::willRunJavaScriptAlert;
-    WKBundlePageSetUIClient(page, &uiClient);
+    WKBundlePageSetUIClient(page, &uiClient.base);
 }
 
 void Bundle::didReceiveMessageToPage(WKBundleRef, WKBundlePageRef, WKStringRef name, WKTypeRef messageBody, const void*)

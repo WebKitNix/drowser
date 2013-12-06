@@ -75,18 +75,18 @@ void Tab::init()
     WKPageSetApplicationNameForUserAgent(m_page, appName);
     WKRelease(appName);
 
-    WKViewClient client;
-    std::memset(&client, 0, sizeof(WKViewClient));
-    client.version = kWKViewClientCurrentVersion;
-    client.clientInfo = this;
+    WKViewClientV0 client;
+    std::memset(&client, 0, sizeof(WKViewClientV0));
+    client.base.version = 0;
+    client.base.clientInfo = this;
     client.viewNeedsDisplay = &Tab::onViewNeedsDisplayCallback;
-    client.webProcessCrashed = &Tab::onWebProcessCrashedCallback; 
-    WKViewSetViewClient(m_view, &client);
+    client.webProcessCrashed = &Tab::onWebProcessCrashedCallback;
+    WKViewSetViewClient(m_view, &client.base);
 
-    WKPageLoaderClient loaderClient;
-    memset(&loaderClient, 0, sizeof(WKPageLoaderClient));
-    loaderClient.version = kWKPageLoaderClientCurrentVersion;
-    loaderClient.clientInfo = this;
+    WKPageLoaderClientV3 loaderClient;
+    memset(&loaderClient, 0, sizeof(WKPageLoaderClientV3));
+    loaderClient.base.version = 3;
+    loaderClient.base.clientInfo = this;
     loaderClient.didStartProgress = &Tab::onStartProgressCallback;
     loaderClient.didChangeProgress = &Tab::onChangeProgressCallback;
     loaderClient.didFinishProgress = &Tab::onFinishProgressCallback;
@@ -94,16 +94,16 @@ void Tab::init()
     loaderClient.didReceiveTitleForFrame = &Tab::onReceiveTitleForFrame;
     loaderClient.didFailProvisionalLoadWithErrorForFrame = &Tab::onFailProvisionalLoadWithErrorForFrameCallback;
 
-    WKPageSetPageLoaderClient(m_page, &loaderClient);
+    WKPageSetPageLoaderClient(m_page, &loaderClient.base);
 
-    WKPageUIClient uiClient;
+    WKPageUIClientV2 uiClient;
     memset(&uiClient, 0, sizeof(WKPageUIClient));
-    uiClient.version = kWKPageUIClientCurrentVersion;
-    uiClient.clientInfo = this;
+    uiClient.base.version = 2;
+    uiClient.base.clientInfo = this;
     uiClient.createNewPage = &Tab::createNewPageCallback;
     uiClient.mouseDidMoveOverElement = &Tab::onMouseDidMoveOverElement;
 
-    WKPageSetPageUIClient(m_page, &uiClient);
+    WKPageSetPageUIClient(m_page, &uiClient.base);
 }
 
 Tab::~Tab()

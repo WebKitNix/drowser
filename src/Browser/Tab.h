@@ -66,6 +66,8 @@ private:
 
     void init();
 
+    static void onMouseCursorChanged(WKViewRef, unsigned, const void* clientInfo);
+
     static void onViewNeedsDisplayCallback(WKViewRef, WKRect, const void* clientInfo);
     static void onWebProcessCrashedCallback(WKViewRef, WKURLRef, const void* clientInfo);
     static void onStartProgressCallback(WKPageRef, const void* clientInfo);
@@ -76,7 +78,6 @@ private:
     static void onFailProvisionalLoadWithErrorForFrameCallback(WKPageRef, WKFrameRef, WKErrorRef, WKTypeRef, const void*);
 
     static WKPageRef createNewPageCallback(WKPageRef, WKURLRequestRef, WKDictionaryRef, WKEventModifiers, WKEventMouseButton, const void*);
-    static void onMouseDidMoveOverElement(WKPageRef, WKHitTestResultRef, WKEventModifiers, WKTypeRef, const void*);
 };
 
 #endif

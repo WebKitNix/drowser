@@ -47,19 +47,11 @@ public:
 class DesktopWindow
 {
 public:
-
-    enum MouseCursor {
-        Arrow,
-        Hand
-    };
-
     virtual ~DesktopWindow();
 
     static DesktopWindow* create(DesktopWindowClient* client, int width, int height);
-
     WKSize size() const { return m_size; }
-
-    virtual void setMouseCursor(MouseCursor) = 0;
+    virtual void setMouseCursor(unsigned shape) = 0;
 
     virtual void makeCurrent() = 0;
     virtual void swapBuffers() = 0;

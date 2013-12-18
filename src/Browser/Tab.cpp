@@ -75,6 +75,13 @@ void Tab::init()
     WKPageSetApplicationNameForUserAgent(m_page, appName);
     WKRelease(appName);
 
+    NIXViewClientV0 nixClient;
+    std::memset(&nixClient, 0, sizeof(nixClient));
+    nixClient.base.version = 0;
+    nixClient.base.clientInfo = this;
+    nixClient.setCursor = &Tab::onMouseCursorChanged;
+    NIXViewSetNixViewClient(m_view, &nixClient.base);
+
     WKViewClientV0 client;
     std::memset(&client, 0, sizeof(WKViewClientV0));
     client.base.version = 0;
@@ -101,7 +108,6 @@ void Tab::init()
     uiClient.base.version = 2;
     uiClient.base.clientInfo = this;
     uiClient.createNewPage = &Tab::createNewPageCallback;
-    uiClient.mouseDidMoveOverElement = &Tab::onMouseDidMoveOverElement;
 
     WKPageSetPageUIClient(m_page, &uiClient.base);
 }
@@ -146,6 +152,12 @@ void Tab::onCommitLoadForFrame(WKPageRef page, WKFrameRef frame, WKTypeRef, cons
     WKRelease(urlString);
 }
 
+void Tab::onMouseCursorChanged(WKViewRef, unsigned int shape, const void* clientInfo)
+{
+    Tab* self = ((Tab*)clientInfo);
+    self->m_browser->window()->setMouseCursor(shape);
+}
+
 void Tab::onViewNeedsDisplayCallback(WKViewRef, WKRect, const void* clientInfo)
 {
     Tab* self = ((Tab*)clientInfo);
@@ -185,19 +197,6 @@ WKPageRef Tab::createNewPageCallback(WKPageRef, WKURLRequestRef, WKDictionaryRef
     Tab* newTab = self->m_browser->requestTab(self);
     WKRetain(newTab->m_page);
     return newTab->m_page;
-}
-
-void Tab::onMouseDidMoveOverElement(WKPageRef, WKHitTestResultRef hitTestResult, WKEventModifiers, WKTypeRef, const void *clientInfo)
-{
-    Tab* self = ((Tab*)clientInfo);
-
-    WKURLRef url = WKHitTestResultCopyAbsoluteLinkURL(hitTestResult);
-    if (url) {
-        self->m_browser->window()->setMouseCursor(DesktopWindow::Hand);
-        WKRelease(url);
-    } else {
-        self->m_browser->window()->setMouseCursor(DesktopWindow::Arrow);
-    }
 }
 
 void Tab::setSize(WKSize size)

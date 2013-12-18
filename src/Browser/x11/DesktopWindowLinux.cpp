@@ -56,7 +56,7 @@ public:
     ~DesktopWindowLinux();
     void makeCurrent();
     void swapBuffers();
-    void setMouseCursor(MouseCursor cursor);
+    void setMouseCursor(unsigned shape);
 private:
     void freeResources();
     void setup();
@@ -415,18 +415,59 @@ void DesktopWindowLinux::updateSizeIfNeeded(int width, int height)
         m_client->onWindowSizeChange(m_size);
 }
 
-void DesktopWindowLinux::setMouseCursor(MouseCursor cursor)
+void DesktopWindowLinux::setMouseCursor(unsigned shape)
 {
-    unsigned int x11Cursor;
-    switch (cursor) {
-        case Arrow:
-            x11Cursor = XC_left_ptr;
-            break;
-        case Hand:
-            x11Cursor = XC_hand2;
-            break;
-    }
+    static unsigned cursorShapes[] = {
+        XC_left_ptr,                // "cursor/pointer",
+        XC_X_cursor,                // "cursor/cross",
+        XC_hand2,                   // "cursor/hand",
+        XC_xterm,                   // "cursor/i_beam",
+        XC_watch,                   // "cursor/wait",
+        XC_question_arrow,          // "cursor/help",
+        XC_right_side,              // "cursor/east_resize",
+        XC_top_side,                // "cursor/north_resize",
+        XC_top_right_corner,        // "cursor/north_east_resize",
+        XC_top_left_corner,         // "cursor/north_west_resize",
+        XC_bottom_side,             // "cursor/south_resize",
+        XC_bottom_right_corner,     // "cursor/south_east_resize",
+        XC_bottom_left_corner,      // "cursor/south_west_resize",
+        XC_left_side,               // "cursor/west_resize",
+        XC_sb_v_double_arrow,       // "cursor/north_south_resize",
+        XC_sb_h_double_arrow,       // "cursor/east_west_resize",
+        XC_left_ptr,                // "cursor/north_east_south_west_resize",
+        XC_left_ptr,                // "cursor/north_west_south_east_resize",
+        XC_left_ptr,                // "cursor/column_resize",
+        XC_left_ptr,                // "cursor/row_resize",
+        XC_tcross,                  // "cursor/middle_panning",
+        XC_right_tee,               // "cursor/east_panning",
+        XC_top_tee,                 // "cursor/north_panning",
+        XC_ur_angle,                // "cursor/north_east_panning",
+        XC_ul_angle,                // "cursor/north_west_panning",
+        XC_bottom_tee,              // "cursor/south_panning",
+        XC_lr_angle,                // "cursor/south_east_panning",
+        XC_ll_angle,                // "cursor/south_west_panning",
+        XC_left_tee,                // "cursor/west_panning",
+        XC_fleur,                   // "cursor/move",                     duplicated!
+        XC_left_ptr,                // "cursor/vertical_text",
+        XC_left_ptr,                // "cursor/cell",
+        XC_left_ptr,                // "cursor/context_menu",
+        XC_left_ptr,                // "cursor/alias",
+        XC_exchange,                // "cursor/progress",
+        XC_left_ptr,                // "cursor/no_drop",
+        XC_left_ptr,                // "cursor/copy",
+        XC_left_ptr,                // "cursor/none",
+        XC_X_cursor,                // "cursor/not_allowed",
+        XC_X_cursor,                // "cursor/zoom_in",
+        XC_X_cursor,                // "cursor/zoom_out",
+        XC_fleur,                   // "cursor/grab",                     duplicated!
+        XC_fleur,                   // "cursor/grabbing",                 duplicated!
+        XC_left_ptr                 // custom type
+    };
 
+    if (shape > sizeof(cursorShapes)/sizeof(unsigned))
+        return;
+
+    unsigned int x11Cursor = cursorShapes[shape];
     if (m_currentX11Cursor == x11Cursor)
         return;
 

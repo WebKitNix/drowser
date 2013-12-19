@@ -52,11 +52,14 @@ private:
 
 class DesktopWindowLinux : public DesktopWindow, public XlibEventSource::Client {
 public:
-    DesktopWindowLinux(DesktopWindowClient* client, int width, int height);
+    DesktopWindowLinux(DesktopWindowClient* client, int width, int height, bool visible);
     ~DesktopWindowLinux();
     void makeCurrent();
     void swapBuffers();
     void setMouseCursor(unsigned shape);
+    void setVisible(bool);
+    bool visible() const;
+
 private:
     void freeResources();
     void setup();
@@ -82,14 +85,15 @@ private:
     int m_lastClickY;
     WKEventMouseButton m_lastClickButton;
     int m_clickCount;
+    bool m_visible;
 };
 
-DesktopWindow* DesktopWindow::create(DesktopWindowClient* client, int width, int height)
+DesktopWindow* DesktopWindow::create(DesktopWindowClient* client, int width, int height, bool visible)
 {
-    return new DesktopWindowLinux(client, width, height);
+    return new DesktopWindowLinux(client, width, height, visible);
 }
 
-DesktopWindowLinux::DesktopWindowLinux(DesktopWindowClient* client, int width, int height)
+DesktopWindowLinux::DesktopWindowLinux(DesktopWindowClient* client, int width, int height, bool visible)
     : DesktopWindow(client, width, height)
     , m_eventSource(0)
     , m_display(0)
@@ -103,6 +107,7 @@ DesktopWindowLinux::DesktopWindowLinux(DesktopWindowClient* client, int width, i
     , m_lastClickY(0)
     , m_lastClickButton(kWKEventMouseButtonNoButton)
     , m_clickCount(0)
+    , m_visible(visible)
 {
     try {
         setup();
@@ -211,7 +216,9 @@ void DesktopWindowLinux::setup()
     wmDeleteMessageAtom = XInternAtom(m_display, "WM_DELETE_WINDOW", False);
     XSetWMProtocols(m_display, m_window, &wmDeleteMessageAtom, 1);
 
-    XMapWindow(m_display, m_window);
+    if (m_visible)
+        XMapWindow(m_display, m_window);
+
     XStoreName(m_display, m_window, "Drowser");
 
     m_context = glXCreateNewContext(m_display, fbConfig, GLX_RGBA_TYPE, NULL, GL_TRUE);
@@ -478,4 +485,22 @@ void DesktopWindowLinux::setMouseCursor(unsigned shape)
     m_cursor = XCreateFontCursor(m_display, x11Cursor);
     XDefineCursor(m_display, m_window, m_cursor);
     m_currentX11Cursor = x11Cursor;
+}
+
+void DesktopWindowLinux::setVisible(bool visible)
+{
+    if (visible == m_visible)
+        return;
+
+    if (visible)
+        XMapWindow(m_display, m_window);
+    else
+        XUnmapWindow(m_display, m_window);
+
+    m_visible = visible;
+}
+
+bool DesktopWindowLinux::visible() const
+{
+    return m_visible;
 }

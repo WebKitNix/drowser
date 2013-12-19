@@ -48,10 +48,12 @@ class DesktopWindow
 {
 public:
     virtual ~DesktopWindow();
+    static DesktopWindow* create(DesktopWindowClient* client, int width, int height, bool visible=true);
 
-    static DesktopWindow* create(DesktopWindowClient* client, int width, int height);
     WKSize size() const { return m_size; }
     virtual void setMouseCursor(unsigned shape) = 0;
+    virtual void setVisible(bool) = 0;
+    virtual bool visible() const = 0;
 
     virtual void makeCurrent() = 0;
     virtual void swapBuffers() = 0;

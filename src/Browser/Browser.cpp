@@ -142,6 +142,16 @@ void Browser::initUi()
     WKViewSetIsFocused(m_uiView, true);
     WKViewSetIsVisible(m_uiView, true);
     WKViewSetSize(m_uiView, m_window->size());
+
+    NIXViewClientV0 nixClient;
+    std::memset(&nixClient, 0, sizeof(nixClient));
+    nixClient.base.version = 0;
+    nixClient.base.clientInfo = m_window;
+    nixClient.setCursor = [](WKViewRef, unsigned shape, const void* window) {
+        ((DesktopWindow*)window)->setMouseCursor(shape);
+    };
+    NIXViewSetNixViewClient(m_uiView, &nixClient.base);
+
     m_uiPage = WKViewGetPage(m_uiView);
 
     m_glue = new InjectedBundleGlue(m_uiContext);

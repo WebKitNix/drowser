@@ -6,6 +6,7 @@
 
 #tabBar {
     background-image: url(./images/tab_base_fill.png);
+    cursor: default;
 }
 
 .tab {

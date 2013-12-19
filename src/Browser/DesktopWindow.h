@@ -54,6 +54,7 @@ public:
     virtual void setMouseCursor(unsigned shape) = 0;
     virtual void setVisible(bool) = 0;
     virtual bool visible() const = 0;
+    virtual void setPosition(const WKPoint& position) = 0;
 
     virtual void makeCurrent() = 0;
     virtual void swapBuffers() = 0;

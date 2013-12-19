@@ -59,6 +59,7 @@ public:
     void setMouseCursor(unsigned shape);
     void setVisible(bool);
     bool visible() const;
+    void setPosition(const WKPoint& position);
 
 private:
     void freeResources();
@@ -503,4 +504,12 @@ void DesktopWindowLinux::setVisible(bool visible)
 bool DesktopWindowLinux::visible() const
 {
     return m_visible;
+}
+
+void DesktopWindowLinux::setPosition(const WKPoint& position)
+{
+    XWindowChanges changes;
+    changes.x = position.x;
+    changes.y = position.y;
+    XConfigureWindow(m_display, m_window, CWX | CWY, &changes);
 }

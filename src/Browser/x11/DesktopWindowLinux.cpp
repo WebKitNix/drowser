@@ -374,7 +374,7 @@ void DesktopWindowLinux::handleXEvent(const XEvent& event)
         NIXMouseEvent ev;
         const XPointerMovedEvent* xEvent = reinterpret_cast<const XPointerMovedEvent*>(&event);
         ev.type = kNIXInputEventTypeMouseMove;
-        ev.button = kWKEventMouseButtonNoButton;
+        ev.button = m_lastClickButton;
         ev.x = xEvent->x;
         ev.y = xEvent->y;
         ev.globalX = xEvent->x_root;

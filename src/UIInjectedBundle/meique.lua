@@ -1,6 +1,6 @@
 
 uiBundle = Library:new("UiBundle")
-uiBundle:usePackage(nix)
+uiBundle:use(nix)
 uiBundle:addIncludePath("../Shared")
 uiBundle:addFiles([[
     Bundle.cpp

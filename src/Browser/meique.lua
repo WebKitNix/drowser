@@ -1,8 +1,8 @@
 browser = Executable:new("drowser")
-browser:usePackage(glib)
-browser:usePackage(openGL)
-browser:usePackage(x11)
-browser:usePackage(nix)
+browser:use(glib)
+browser:use(openGL)
+browser:use(x11)
+browser:use(nix)
 
 browser:addFiles([[
   main.cpp

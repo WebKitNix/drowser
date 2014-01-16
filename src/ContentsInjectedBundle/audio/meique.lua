@@ -1,10 +1,10 @@
 audio = Library:new("audio", STATIC)
-audio:usePackage(gstreamer)
-audio:usePackage(gstreamerApp)
-audio:usePackage(gstreamerAudio)
-audio:usePackage(gstreamerFft)
-audio:usePackage(gstreamPbUtils)
-audio:usePackage(nix)
+audio:use(gstreamer)
+audio:use(gstreamerApp)
+audio:use(gstreamerAudio)
+audio:use(gstreamerFft)
+audio:use(gstreamPbUtils)
+audio:use(nix)
 audio:addIncludePath("..")
 audio:addFiles([[
     AudioFileReader.cpp

@@ -1,6 +1,6 @@
 mediastream = Library:new("mediaStream", STATIC)
-mediastream:usePackage(nix)
-mediastream:usePackage(gstreamer)
+mediastream:use(nix)
+mediastream:use(gstreamer)
 mediastream:addIncludePath("..")
 mediastream:addFiles([[
     BrowserPlatformUserMedia.cpp
